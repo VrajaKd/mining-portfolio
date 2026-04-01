@@ -28,7 +28,7 @@ def connect_ib(
 
     nest_asyncio.apply()
 
-    from ib_insync import IB
+    from ib_async import IB
 
     host = host or os.getenv("IBKR_HOST", "localhost")
     port = port or int(os.getenv("IBKR_PORT", "7497"))
