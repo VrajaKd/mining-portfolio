@@ -20,7 +20,7 @@ def connect_ib(
 ):
     import nest_asyncio
 
-    # Ensure event loop exists before importing ib_insync
+    # Ensure event loop exists before importing ib_async
     try:
         asyncio.get_event_loop()
     except RuntimeError:
