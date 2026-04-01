@@ -50,34 +50,27 @@ def render(settings: dict):
         for w in warnings:
             st.warning(w)
 
-    from modules.market_data import enrich_holdings
-
-    with st.spinner("Fetching market data..."):
-        enriched = enrich_holdings(normalized)
-
     display_cols = [
         "ticker",
         "company_name",
         "quantity",
         "market_value",
+        "avg_cost",
+        "unrealized_pl",
         "portfolio_weight_pct",
-        "current_price",
-        "day_change_pct",
-        "market_cap",
-        "volume",
     ]
-    available = [c for c in display_cols if c in enriched.columns]
+    available = [c for c in display_cols if c in normalized.columns]
 
-    st.subheader(f"Portfolio ({len(enriched)} positions)")
+    st.subheader(f"Portfolio ({len(normalized)} positions)")
     st.dataframe(
-        enriched[available],
+        normalized[available],
         use_container_width=True,
         hide_index=True,
     )
 
     col1, col2 = st.columns(2)
     with col1:
-        total_value = enriched["market_value"].sum()
+        total_value = normalized["market_value"].sum()
         st.metric("Total Portfolio Value", f"${total_value:,.2f}")
     with col2:
-        st.metric("Positions", len(enriched))
+        st.metric("Positions", len(normalized))
