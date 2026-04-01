@@ -1,0 +1,32 @@
+[project]
+name = "mining-portfolio"
+version = "0.1.0"
+description = "Portfolio intelligence platform for junior mining stocks"
+requires-python = ">=3.12"
+dependencies = [
+    "streamlit>=1.40",
+    "pandas>=2.2",
+    "numpy>=2.0",
+    "ib_insync>=0.9",
+    "yfinance>=0.2",
+    "pyyaml>=6.0",
+    "python-dotenv>=1.0",
+    "nest-asyncio>=1.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.8",
+    "pre-commit>=4.0",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

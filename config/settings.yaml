@@ -1,0 +1,43 @@
+model:
+  score_weights:
+    geology: 0.20
+    management: 0.15
+    funding: 0.12
+    capital_structure: 0.10
+    jurisdiction: 0.10
+    catalysts: 0.10
+    permitting: 0.08
+    valuation: 0.08
+    momentum: 0.04
+    strategic_commodity: 0.03
+
+  risk_thresholds:
+    sell_candidate: 9
+    swap_trigger: 9
+
+  position_size:
+    core_min: 0.06
+    core_max: 0.10
+    secondary_min: 0.03
+    secondary_max: 0.06
+    speculative_min: 0.01
+    speculative_max: 0.03
+
+  decision:
+    buy_score_min: 8.0
+    buy_ev_min: 20
+    add_ev_min: 25
+    hold_score_min: 7.0
+    sell_risk_min: 9
+
+  rebalance:
+    overweight_deviation: 0.25
+    swap_ev_multiplier: 1.3
+
+paths:
+  raw_data: data/raw
+  processed_data: data/processed
+  output_reports: data/reports
+
+data:
+  primary_currency: USD

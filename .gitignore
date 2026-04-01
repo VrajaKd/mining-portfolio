@@ -1,0 +1,33 @@
+# Data
+data/
+
+# Environment
+.env
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.idea/
+
+# Local-only docs and communication
+docs/
+communication/
+CLAUDE.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Streamlit
+.streamlit/
+
+# Local files
+help.txt
+review.md
+
+# uv
+.python-version
