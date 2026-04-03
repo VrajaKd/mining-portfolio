@@ -1,0 +1,99 @@
+geology:
+  name: "Geology / Deposit Quality"
+  weight: 0.20
+  bands:
+    9-10: "District-scale potential, strong intercept continuity, scale evidence, comparable analogues"
+    7-8: "Strong system indicators, key uncertainty on continuity/size remains"
+    5-6: "Interesting but not yet enough evidence"
+    3-4: "Speculative concept with weak proof"
+    0-2: "No meaningful geological edge yet"
+
+discovery_probability:
+  name: "Discovery Probability"
+  weight: 0.15
+  bands:
+    9-10: "Active discovery with repeated strong results and continuity"
+    7-8: "First discovery hits, follow-up drilling planned"
+    5-6: "First-pass drill stage, some encouraging results"
+    3-4: "Grassroots with limited drilling"
+    0-2: "No drilling, concept stage only"
+
+scale_potential:
+  name: "Scale Potential (Tier-1)"
+  weight: 0.15
+  bands:
+    9-10: "Clear Tier-1 scale potential, multi-million oz/lb resource path"
+    7-8: "Strong scale indicators, district potential emerging"
+    5-6: "Moderate scale, single deposit focus"
+    3-4: "Small scale, limited growth potential"
+    0-2: "Minimal scale, boutique deposit"
+
+management:
+  name: "Management Quality"
+  weight: 0.10
+  bands:
+    9-10: "Repeated value creation, aligned ownership, strong capital discipline"
+    7-8: "Credible team with relevant experience and decent ownership"
+    5-6: "Adequate team, limited proof of monetization success"
+    3-4: "Weak track record, promotional behavior, poor execution"
+    0-2: "Serious governance/alignment concerns"
+
+jurisdiction:
+  name: "Jurisdiction"
+  weight: 0.10
+  bands:
+    9-10: "Tier-1 mining jurisdiction, fast permitting, supportive government"
+    7-8: "Good jurisdiction with manageable regulatory requirements"
+    5-6: "Acceptable jurisdiction, some permitting uncertainty"
+    3-4: "Challenging jurisdiction, significant political/regulatory risk"
+    0-2: "Very high risk jurisdiction, expropriation/ban concerns"
+
+catalysts:
+  name: "Catalysts (12-24m)"
+  weight: 0.10
+  bands:
+    9-10: "Multiple near-term catalysts (drill results, resource, PEA)"
+    7-8: "Clear catalyst path within 12 months"
+    5-6: "Some catalysts expected but timing uncertain"
+    3-4: "Limited near-term catalysts, long development timeline"
+    0-2: "No visible catalysts, stale story"
+
+capital_structure:
+  name: "Capital Structure"
+  weight: 0.05
+  bands:
+    9-10: "Tight structure, minimal dilution, strong insider ownership"
+    7-8: "Reasonable structure, moderate dilution history"
+    5-6: "Average structure, some warrant/option overhang"
+    3-4: "Heavy dilution, large overhang, frequent financings"
+    0-2: "Toxic structure, serial dilution, no insider alignment"
+
+market_positioning:
+  name: "Market Positioning"
+  weight: 0.05
+  bands:
+    9-10: "Strong narrative, institutional following, sector leadership"
+    7-8: "Good market awareness, growing interest"
+    5-6: "Moderate visibility, under-followed"
+    3-4: "Poor market presence, unknown name"
+    0-2: "No market following, illiquid"
+
+strategic_value:
+  name: "Strategic Value (M&A/Supply Chain)"
+  weight: 0.05
+  bands:
+    9-10: "Clear M&A target, strategic commodity, major nearby, JV/offtake"
+    7-8: "Strategic interest likely, critical mineral, government support"
+    5-6: "Some strategic relevance, not a priority target"
+    3-4: "Limited strategic appeal"
+    0-2: "No strategic relevance"
+
+esg_permitting:
+  name: "ESG / Permitting"
+  weight: 0.05
+  bands:
+    9-10: "Permitted or near-permitted, strong social license, ESG compliant"
+    7-8: "Permitting on track, manageable ESG requirements"
+    5-6: "Permitting in progress, some community/environmental concerns"
+    3-4: "Significant permitting challenges, opposition emerging"
+    0-2: "Major ESG/permitting blockers, project viability at risk"
