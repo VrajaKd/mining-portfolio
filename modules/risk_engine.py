@@ -65,7 +65,7 @@ def enrich_with_risk(
     result = df.copy()
     result["risk_score"] = result.apply(
         lambda row: calculate_risk(
-            row.get("score"), row.get("ev_adjusted")
+            row.get("score"), row.get("ev_adjusted"), settings=settings
         ),
         axis=1,
     )

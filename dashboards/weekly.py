@@ -37,7 +37,12 @@ def render(settings: dict):
             f"{avg_ev:.2f}" if pd.notna(avg_ev) else "N/A",
         )
     with col3:
-        high_risk = (enriched["risk_score"] >= 9).sum()
+        sell_threshold = (
+            settings.get("model", {})
+            .get("risk_thresholds", {})
+            .get("sell_candidate", 9)
+        )
+        high_risk = (enriched["risk_score"] >= sell_threshold).sum()
         st.metric("High Risk", f"{high_risk} / {len(enriched)}")
 
     # Complete scoring table
