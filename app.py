@@ -12,7 +12,7 @@ def load_settings() -> dict:
 
 def main():
     st.set_page_config(
-        page_title="Portfolio Intelligence V6.1",
+        page_title="Portfolio Intelligence V7",
         page_icon="⛏️",
         layout="wide",
     )
@@ -30,9 +30,13 @@ def main():
 
         render(settings)
     elif page == "Weekly":
-        st.info("Weekly dashboard — coming in milestone 2")
+        from dashboards.weekly import render
+
+        render(settings)
     elif page == "Monthly":
-        st.info("Monthly dashboard — coming in milestone 2")
+        from dashboards.monthly import render
+
+        render(settings)
 
 
 if __name__ == "__main__":

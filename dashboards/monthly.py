@@ -1,0 +1,172 @@
+from pathlib import Path
+
+import pandas as pd
+import streamlit as st
+
+
+def _get_db_path(settings: dict) -> str:
+    return settings.get("paths", {}).get(
+        "database", "data/processed/scoring_data.db"
+    )
+
+
+def _load_and_enrich(normalized: pd.DataFrame, settings: dict) -> pd.DataFrame:
+    from modules.decision_engine import enrich_with_decisions
+    from modules.ev_engine import enrich_with_ev
+    from modules.persistence import init_database
+    from modules.rebalance_engine import calculate_target_weights
+    from modules.risk_engine import enrich_with_risk
+    from modules.scoring import enrich_with_scores
+
+    db_path = _get_db_path(settings)
+    init_database(db_path)
+
+    df = enrich_with_scores(normalized, db_path)
+    df = enrich_with_ev(df, db_path, settings)
+    df = enrich_with_risk(df, settings)
+    df = enrich_with_decisions(df, settings)
+    df = calculate_target_weights(df, settings)
+    return df
+
+
+def render(settings: dict):
+    st.title("Monthly Strategic Review")
+
+    if "raw_portfolio" not in st.session_state:
+        st.info("Load portfolio data on the Daily page first.")
+        return
+
+    from modules.ingestion import normalize_holdings
+
+    raw = st.session_state["raw_portfolio"]
+    normalized = normalize_holdings(raw)
+    enriched = _load_and_enrich(normalized, settings)
+    total_value = enriched["market_value"].sum()
+
+    # Performance summary
+    st.subheader("Portfolio Summary")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Total Value", f"${total_value:,.2f}")
+    with col2:
+        has_pl = (
+            "unrealized_pl" in enriched.columns
+            and not enriched["unrealized_pl"].isna().all()
+        )
+        best = enriched.loc[enriched["unrealized_pl"].idxmax()] if has_pl else None
+        if best is not None:
+            st.metric(
+                "Best Position",
+                best["ticker"],
+                f"${best['unrealized_pl']:+,.2f}",
+            )
+    with col3:
+        worst = enriched.loc[enriched["unrealized_pl"].idxmin()] if has_pl else None
+        if worst is not None:
+            st.metric(
+                "Worst Position",
+                worst["ticker"],
+                f"${worst['unrealized_pl']:+,.2f}",
+            )
+
+    # Sector exposure — commodity
+    st.subheader("Commodity Exposure")
+    if "commodity" in enriched.columns:
+        comm = enriched.groupby("commodity").agg(
+            weight=("portfolio_weight_pct", "sum"),
+            positions=("ticker", "count"),
+        ).sort_values("weight", ascending=False)
+        max_commodity = (
+            settings.get("model", {})
+            .get("portfolio_constraints", {})
+            .get("max_commodity_exposure", 0.30)
+            * 100
+        )
+        comm["target_max"] = max_commodity
+        comm["status"] = comm["weight"].apply(
+            lambda w: "OVERWEIGHT" if w > max_commodity else "OK"
+        )
+        st.dataframe(comm, use_container_width=True)
+    else:
+        st.info(
+            "Commodity data not available. "
+            "Add commodity field to portfolio data."
+        )
+
+    # Sector exposure — region
+    st.subheader("Region Exposure")
+    if "jurisdiction" in enriched.columns:
+        region = enriched.groupby("jurisdiction").agg(
+            weight=("portfolio_weight_pct", "sum"),
+            positions=("ticker", "count"),
+        ).sort_values("weight", ascending=False)
+        max_region = (
+            settings.get("model", {})
+            .get("portfolio_constraints", {})
+            .get("max_region_exposure", 0.45)
+            * 100
+        )
+        region["target_max"] = max_region
+        region["status"] = region["weight"].apply(
+            lambda w: "OVERWEIGHT" if w > max_region else "OK"
+        )
+        st.dataframe(region, use_container_width=True)
+    else:
+        st.info(
+            "Region data not available. "
+            "Add jurisdiction field to portfolio data."
+        )
+
+    # Strategic positioning
+    st.subheader("Strategic Positioning")
+    if "tier" in enriched.columns and enriched["tier"].notna().any():
+        tiers = enriched.groupby("tier").agg(
+            positions=("ticker", "count"),
+            weight=("portfolio_weight_pct", "sum"),
+            avg_score=("score", "mean"),
+            avg_ev=("ev_adjusted", "mean"),
+        ).round(2)
+        st.dataframe(tiers, use_container_width=True)
+    else:
+        st.info("Score positions on the Daily page to see tier breakdown.")
+
+    # Full portfolio table
+    st.subheader("Full Portfolio")
+    display_cols = [
+        "ticker",
+        "quantity",
+        "market_value",
+        "portfolio_weight_pct",
+        "score",
+        "ev_adjusted",
+        "risk_score",
+        "tier",
+        "action",
+    ]
+    available = [c for c in display_cols if c in enriched.columns]
+    st.dataframe(
+        enriched[available].sort_values("portfolio_weight_pct", ascending=False),
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    # Next month priorities
+    st.subheader("Next Month Priorities")
+    st.text_area(
+        "Notes for next month",
+        placeholder="E.g. Exit CCC, reduce gold overweight, add to AAA...",
+        height=100,
+    )
+
+    # PDF export
+    st.divider()
+    if st.button("Export Monthly PDF"):
+        from reports.pdf_generator import MonthlyPDFReport
+
+        output = Path(
+            settings.get("paths", {}).get("output_reports", "reports")
+        )
+        output.mkdir(parents=True, exist_ok=True)
+        path = MonthlyPDFReport(settings).generate(enriched, output)
+        with open(path, "rb") as f:
+            st.download_button("Download PDF", f, file_name=path.name)
