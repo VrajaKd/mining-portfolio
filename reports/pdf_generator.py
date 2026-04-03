@@ -105,7 +105,7 @@ class DailyPDFReport(PortfolioPDFReport):
     def generate(
         self, df: pd.DataFrame, output_dir: Path
     ) -> Path:
-        filename = f"Daily_Report_{datetime.now().strftime('%Y-%m-%d')}.pdf"
+        filename = f"Daily_Report_{datetime.now().strftime('%Y-%m-%d_%H%M%S')}.pdf"
         path = output_dir / filename
         doc = SimpleDocTemplate(
             str(path),
@@ -146,7 +146,12 @@ class DailyPDFReport(PortfolioPDFReport):
         elements.append(Spacer(1, 12))
 
         # Risk flags
-        high_risk = df[df["risk_score"] >= 9]
+        sell_threshold = (
+            self.settings.get("model", {})
+            .get("risk_thresholds", {})
+            .get("sell_candidate", 9)
+        )
+        high_risk = df[df["risk_score"] >= sell_threshold]
         if not high_risk.empty:
             elements.append(
                 Paragraph("Risk Flags", self.styles["SectionHeader"])
@@ -169,7 +174,7 @@ class WeeklyPDFReport(PortfolioPDFReport):
     def generate(
         self, df: pd.DataFrame, output_dir: Path
     ) -> Path:
-        filename = f"Weekly_Report_{datetime.now().strftime('%Y-%m-%d')}.pdf"
+        filename = f"Weekly_Report_{datetime.now().strftime('%Y-%m-%d_%H%M%S')}.pdf"
         path = output_dir / filename
         doc = SimpleDocTemplate(
             str(path),
@@ -234,7 +239,7 @@ class MonthlyPDFReport(PortfolioPDFReport):
     def generate(
         self, df: pd.DataFrame, output_dir: Path
     ) -> Path:
-        filename = f"Monthly_Report_{datetime.now().strftime('%Y-%m-%d')}.pdf"
+        filename = f"Monthly_Report_{datetime.now().strftime('%Y-%m-%d_%H%M%S')}.pdf"
         path = output_dir / filename
         doc = SimpleDocTemplate(
             str(path),

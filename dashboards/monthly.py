@@ -1,32 +1,8 @@
 from pathlib import Path
 
-import pandas as pd
 import streamlit as st
 
-
-def _get_db_path(settings: dict) -> str:
-    return settings.get("paths", {}).get(
-        "database", "data/processed/scoring_data.db"
-    )
-
-
-def _load_and_enrich(normalized: pd.DataFrame, settings: dict) -> pd.DataFrame:
-    from modules.decision_engine import enrich_with_decisions
-    from modules.ev_engine import enrich_with_ev
-    from modules.persistence import init_database
-    from modules.rebalance_engine import calculate_target_weights
-    from modules.risk_engine import enrich_with_risk
-    from modules.scoring import enrich_with_scores
-
-    db_path = _get_db_path(settings)
-    init_database(db_path)
-
-    df = enrich_with_scores(normalized, db_path)
-    df = enrich_with_ev(df, db_path, settings)
-    df = enrich_with_risk(df, settings)
-    df = enrich_with_decisions(df, settings)
-    df = calculate_target_weights(df, settings)
-    return df
+from dashboards.shared import load_and_enrich
 
 
 def render(settings: dict):
@@ -40,7 +16,7 @@ def render(settings: dict):
 
     raw = st.session_state["raw_portfolio"]
     normalized = normalize_holdings(raw)
-    enriched = _load_and_enrich(normalized, settings)
+    enriched = load_and_enrich(normalized, settings)
     total_value = enriched["market_value"].sum()
 
     # Performance summary
@@ -60,6 +36,8 @@ def render(settings: dict):
                 best["ticker"],
                 f"${best['unrealized_pl']:+,.2f}",
             )
+        else:
+            st.metric("Best Position", "N/A")
     with col3:
         worst = enriched.loc[enriched["unrealized_pl"].idxmin()] if has_pl else None
         if worst is not None:
@@ -68,6 +46,8 @@ def render(settings: dict):
                 worst["ticker"],
                 f"${worst['unrealized_pl']:+,.2f}",
             )
+        else:
+            st.metric("Worst Position", "N/A")
 
     # Sector exposure — commodity
     st.subheader("Commodity Exposure")
@@ -148,14 +128,6 @@ def render(settings: dict):
         enriched[available].sort_values("portfolio_weight_pct", ascending=False),
         use_container_width=True,
         hide_index=True,
-    )
-
-    # Next month priorities
-    st.subheader("Next Month Priorities")
-    st.text_area(
-        "Notes for next month",
-        placeholder="E.g. Exit CCC, reduce gold overweight, add to AAA...",
-        height=100,
     )
 
     # PDF export
