@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit as st
 
 from dashboards.components import alert_error, alert_info, alert_success, alert_warning
-from dashboards.shared import get_db_path, load_and_enrich
+from dashboards.shared import get_db_path, load_and_enrich, rename_for_display
 from modules.persistence import SCORE_CRITERIA
 
 
@@ -57,7 +57,7 @@ def render(settings: dict):
         score_cols = ["ticker", *SCORE_CRITERIA, "final_score"]
         available = [c for c in score_cols if c in scores_df.columns]
         st.dataframe(
-            scores_df[available],
+            rename_for_display(scores_df[available]),
             use_container_width=True,
             hide_index=True,
         )
@@ -84,7 +84,11 @@ def render(settings: dict):
         ).round(2)
         gap_view = gap_view.sort_values("delta_pct")
 
-    st.dataframe(gap_view, use_container_width=True, hide_index=True)
+    st.dataframe(
+        rename_for_display(gap_view),
+        use_container_width=True,
+        hide_index=True,
+    )
 
     # Rebalance plan
     st.subheader("Rebalance Plan")
@@ -107,7 +111,7 @@ def render(settings: dict):
         if not sells.empty:
             st.markdown("**Trim / Sell**")
             st.dataframe(
-                sells[available],
+                rename_for_display(sells[available]),
                 use_container_width=True,
                 hide_index=True,
             )
@@ -115,7 +119,7 @@ def render(settings: dict):
         if not adds.empty:
             st.markdown("**Add**")
             st.dataframe(
-                adds[available],
+                rename_for_display(adds[available]),
                 use_container_width=True,
                 hide_index=True,
             )
@@ -145,7 +149,7 @@ def render(settings: dict):
         best_cols = ["ticker", "score", "ev_adjusted", "tier", "action"]
         available = [c for c in best_cols if c in top5.columns]
         st.dataframe(
-            top5[available],
+            rename_for_display(top5[available]),
             use_container_width=True,
             hide_index=True,
         )

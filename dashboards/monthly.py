@@ -3,7 +3,7 @@ from pathlib import Path
 import streamlit as st
 
 from dashboards.components import alert_info
-from dashboards.shared import load_and_enrich
+from dashboards.shared import load_and_enrich, rename_for_display
 
 
 def render(settings: dict):
@@ -126,7 +126,9 @@ def render(settings: dict):
     ]
     available = [c for c in display_cols if c in enriched.columns]
     st.dataframe(
-        enriched[available].sort_values("portfolio_weight_pct", ascending=False),
+        rename_for_display(
+            enriched[available].sort_values("portfolio_weight_pct", ascending=False)
+        ),
         use_container_width=True,
         hide_index=True,
     )

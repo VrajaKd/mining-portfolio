@@ -27,7 +27,7 @@ _STYLES = {
         "text": DUSK_BLUE,
     },
     "error": {
-        "bg": "#f5cfd0",
+        "bg": "#fae8e9",
         "border": LIGHT_CORAL,
         "text": DUSK_BLUE,
     },

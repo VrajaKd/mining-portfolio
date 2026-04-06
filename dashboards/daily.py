@@ -4,7 +4,12 @@ import pandas as pd
 import streamlit as st
 
 from dashboards.components import alert_error, alert_info, alert_success, alert_warning
-from dashboards.shared import get_db_path, load_and_enrich
+from dashboards.shared import (
+    DISPLAY_NAMES,
+    get_db_path,
+    load_and_enrich,
+    rename_for_display,
+)
 
 
 def _render_scoring_input(
@@ -137,11 +142,7 @@ def _render_decision_table(enriched: pd.DataFrame):
     available = [c for c in display_cols if c in enriched.columns]
     view = enriched[available].copy()
 
-    # Round numeric columns for clean display
-    num_cols = ["score", "ev_adjusted", "portfolio_weight_pct", "target_weight_pct"]
-    for col in num_cols:
-        if col in view.columns:
-            view[col] = view[col].round(2)
+    view = rename_for_display(view)
 
     def _color_action(val):
         action_colors = {
@@ -149,16 +150,18 @@ def _render_decision_table(enriched: pd.DataFrame):
             "ADD": "background-color: #355070; color: white",
             "HOLD": "background-color: #eaac8b; color: #355070",
             "SELL": "background-color: #e56b6f; color: white",
-            "NO_DATA": "background-color: #f5e6d8; color: #355070",
+            "No Score": "background-color: #f5e6d8; color: #355070",
         }
         return action_colors.get(val, "")
 
-    fmt = {col: "{:.2f}" for col in num_cols if col in view.columns}
-    if "action" in view.columns:
-        styled = view.style.map(_color_action, subset=["action"]).format(fmt, na_rep="None")
+    action_col = DISPLAY_NAMES["action"]
+    if action_col in view.columns:
+        styled = view.style.map(
+            _color_action, subset=[action_col]
+        )
         st.dataframe(styled, use_container_width=True, hide_index=True)
     else:
-        st.dataframe(view.style.format(fmt, na_rep="None"), use_container_width=True, hide_index=True)
+        st.dataframe(view, use_container_width=True, hide_index=True)
 
 
 def _render_risk_flags(enriched: pd.DataFrame, settings: dict):
@@ -187,7 +190,7 @@ def _render_swap_candidates(enriched: pd.DataFrame, settings: dict):
         return
 
     st.subheader("Swap Candidates")
-    st.dataframe(swaps, use_container_width=True, hide_index=True)
+    st.dataframe(rename_for_display(swaps), use_container_width=True, hide_index=True)
 
 
 def render(settings: dict):

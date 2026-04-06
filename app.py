@@ -25,54 +25,73 @@ def main():
         section[data-testid="stSidebar"] {
             background-color: #355070;
         }
-        section[data-testid="stSidebar"] * {
-            color: white !important;
+        /* Sidebar nav buttons — look like text links */
+        section[data-testid="stSidebar"] button,
+        section[data-testid="stSidebar"] button p,
+        section[data-testid="stSidebar"] button span,
+        section[data-testid="stSidebar"] button div {
+            background: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            color: rgba(255,255,255,0.7) !important;
+            font-size: 18px !important;
+            font-weight: 400 !important;
+            justify-content: flex-start !important;
         }
-        /* Hide Streamlit button containers in sidebar */
-        section[data-testid="stSidebar"] .stButton {
-            display: none;
+        section[data-testid="stSidebar"] button:hover,
+        section[data-testid="stSidebar"] button:hover p,
+        section[data-testid="stSidebar"] button:hover span {
+            color: white !important;
+            background: none !important;
+        }
+        section[data-testid="stSidebar"] button[kind="primary"],
+        section[data-testid="stSidebar"] button[kind="primary"] p,
+        section[data-testid="stSidebar"] button[kind="primary"] span {
+            color: #eaac8b !important;
+            font-weight: 600 !important;
+            background: none !important;
         }
         /* Main content primary buttons */
-        button[kind="primary"] {
+        section[data-testid="stMain"] button[kind="primary"] {
             background-color: #355070 !important;
             border-color: #355070 !important;
+            color: white !important;
+        }
+        /* Secondary buttons (Export etc) */
+        section[data-testid="stMain"] button[kind="secondary"] {
+            background-color: #eaac8b !important;
+            border-color: #eaac8b !important;
+            color: white !important;
+        }
+        section[data-testid="stMain"] button[kind="secondary"]:hover {
+            background-color: #d4956f !important;
+            border-color: #d4956f !important;
         }
         div[data-testid="stMetricLabel"] {
             color: #6d597a !important;
         }
-        /* Sidebar nav links — must override the * selector */
-        section[data-testid="stSidebar"] .sidebar-nav a {
-            display: block;
-            padding: 8px 16px;
-            color: rgba(255,255,255,0.7) !important;
-            text-decoration: none;
-            font-size: 18px;
-        }
-        section[data-testid="stSidebar"] .sidebar-nav a:hover {
-            color: white !important;
-        }
-        section[data-testid="stSidebar"] .sidebar-nav a.active {
-            color: #eaac8b !important;
-            font-weight: 600;
-        }
     </style>
     """, unsafe_allow_html=True)
 
-    # Navigation via query params
+    # Navigation via session state
     pages = ["Daily", "Weekly", "Monthly"]
-    current = st.query_params.get("page", "Daily")
-    if current not in pages:
-        current = "Daily"
+    if "nav_page" not in st.session_state:
+        st.session_state["nav_page"] = "Daily"
 
     with st.sidebar:
-        nav_html = '<div class="sidebar-nav">'
         for p in pages:
-            cls = ' class="active"' if p == current else ""
-            nav_html += f'<a href="?page={p}"{cls}>{p}</a>'
-        nav_html += "</div>"
-        st.markdown(nav_html, unsafe_allow_html=True)
+            is_active = p == st.session_state["nav_page"]
+            st.button(
+                p,
+                key=f"nav_{p}",
+                use_container_width=True,
+                type="primary" if is_active else "secondary",
+                on_click=lambda sel=p: st.session_state.update(
+                    nav_page=sel
+                ),
+            )
 
-    page = current
+    page = st.session_state["nav_page"]
 
     if page == "Daily":
         from dashboards.daily import render

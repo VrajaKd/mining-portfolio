@@ -2,6 +2,56 @@ from __future__ import annotations
 
 import pandas as pd
 
+DISPLAY_NAMES = {
+    "ticker": "Ticker",
+    "score": "Score",
+    "ev_adjusted": "Expected Value",
+    "risk_score": "Risk",
+    "action": "Action",
+    "portfolio_weight_pct": "Weight %",
+    "target_weight_pct": "Target %",
+    "market_value": "Market Value",
+    "quantity": "Quantity",
+    "tier": "Tier",
+    "delta_pct": "Delta %",
+    "rebalance_action": "Action",
+    "delta_weight_pct": "Delta %",
+    "delta_value": "Delta $",
+    "sell_ticker": "Sell",
+    "sell_ev": "Sell EV",
+    "buy_ticker": "Buy",
+    "buy_ev": "Buy EV",
+    "ev_improvement": "EV Improvement",
+    "unrealized_pl": "Unrealized P/L",
+    "commodity": "Commodity",
+    "jurisdiction": "Jurisdiction",
+    "company_name": "Company",
+}
+
+
+ACTION_LABELS = {
+    "NO_DATA": "No Score",
+}
+
+
+def rename_for_display(df: pd.DataFrame) -> pd.DataFrame:
+    renames = {
+        k: v for k, v in DISPLAY_NAMES.items() if k in df.columns
+    }
+    result = df.rename(columns=renames)
+    action_col = DISPLAY_NAMES.get("action", "action")
+    if action_col in result.columns:
+        result[action_col] = result[action_col].replace(ACTION_LABELS)
+    # Format numbers and replace NaN
+    for col in result.columns:
+        if result[col].dtype in ("float64", "float32"):
+            result[col] = result[col].apply(
+                lambda x: f"{x:.2f}" if pd.notna(x) else "—"
+            )
+        else:
+            result[col] = result[col].fillna("—")
+    return result
+
 
 def get_db_path(settings: dict) -> str:
     return settings.get("paths", {}).get(
