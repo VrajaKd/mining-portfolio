@@ -1,5 +1,6 @@
-# Data
+# Data (keep sample files)
 data/
+!data/sample_portfolio.csv
 
 # Environment
 .env
@@ -22,8 +23,8 @@ CLAUDE.md
 .DS_Store
 Thumbs.db
 
-# Streamlit
-.streamlit/
+# Streamlit secrets (keep config.toml)
+.streamlit/secrets.toml
 
 # Local files
 help.txt
