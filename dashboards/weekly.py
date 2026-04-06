@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+from dashboards.components import alert_error, alert_info, alert_success, alert_warning
 from dashboards.shared import get_db_path, load_and_enrich
 from modules.persistence import SCORE_CRITERIA
 
@@ -11,7 +12,7 @@ def render(settings: dict):
     st.title("Weekly Portfolio Review")
 
     if "raw_portfolio" not in st.session_state:
-        st.info("Load portfolio data on the Daily page first.")
+        alert_info("Load portfolio data on the Daily page first.")
         return
 
     from modules.ingestion import normalize_holdings
@@ -61,7 +62,7 @@ def render(settings: dict):
             hide_index=True,
         )
     else:
-        st.info("No scores entered yet. Score positions on the Daily page.")
+        alert_info("No scores entered yet. Score positions on the Daily page.")
 
     # Allocation gap table
     st.subheader("Allocation Gap")
@@ -123,7 +124,7 @@ def render(settings: dict):
         cash_needed = adds["delta_value"].sum() if not adds.empty else 0
         st.metric("Net cash flow", f"${cash_freed + cash_needed:,.2f}")
     else:
-        st.success("Portfolio is balanced — no rebalance actions needed.")
+        alert_success("Portfolio is balanced — no rebalance actions needed.")
 
     # Constraint violations
     from modules.rebalance_engine import check_constraints
@@ -133,9 +134,9 @@ def render(settings: dict):
         st.subheader("Constraint Violations")
         for v in violations:
             if v["severity"] == "high":
-                st.error(v["message"])
+                alert_error(v["message"])
             else:
-                st.warning(v["message"])
+                alert_warning(v["message"])
 
     # Best ideas
     st.subheader("Best Ideas (Top 5 by EV)")

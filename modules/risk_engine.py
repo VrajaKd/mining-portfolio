@@ -13,7 +13,7 @@ def calculate_risk(
     if manual_override is not None:
         return max(5, min(10, manual_override))
 
-    if score is None and ev is None:
+    if pd.isna(score) and pd.isna(ev):
         return 7  # Unknown = moderate risk
 
     # Thresholds from config or defaults
@@ -31,8 +31,8 @@ def calculate_risk(
     ev_ok = thresholds.get("ev_ok", 3.5)
     ev_good = thresholds.get("ev_good", 4.5)
 
-    s = score if score is not None else 7.0
-    e = ev if ev is not None else 3.5
+    s = score if not pd.isna(score) else 7.0
+    e = ev if not pd.isna(ev) else 3.5
 
     if s < score_sell or e < ev_sell:
         return 9

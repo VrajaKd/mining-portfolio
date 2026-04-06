@@ -22,10 +22,27 @@ class PortfolioPDFReport:
 
     def __init__(self, settings: dict):
         self.settings = settings
-        pdf_cfg = settings.get("pdf", {})
-        self.accent = colors.HexColor(
-            pdf_cfg.get("accent_color", "#003366")
+        theme = settings.get("theme", {})
+        self.dusk_blue = colors.HexColor(
+            theme.get("dusk_blue", "#355070")
         )
+        self.dusty_lavender = colors.HexColor(
+            theme.get("dusty_lavender", "#6d597a")
+        )
+        self.rosewood = colors.HexColor(
+            theme.get("rosewood", "#b56576")
+        )
+        self.light_coral = colors.HexColor(
+            theme.get("light_coral", "#e56b6f")
+        )
+        self.sage_green = colors.HexColor(
+            theme.get("sage_green", "#6b8f71")
+        )
+        self.light_bronze = colors.HexColor(
+            theme.get("light_bronze", "#eaac8b")
+        )
+        self.accent = self.dusk_blue
+        pdf_cfg = settings.get("pdf", {})
         self.version = pdf_cfg.get("version", "V7 MVP")
         self.styles = getSampleStyleSheet()
         self._add_custom_styles()
@@ -60,10 +77,16 @@ class PortfolioPDFReport:
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
             ("FONTSIZE", (0, 0), (-1, -1), 8),
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("GRID", (0, 0), (-1, -1), 0.5, self.dusty_lavender),
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
             ("ROWBACKGROUNDS", (0, 1), (-1, -1), [
-                colors.white, colors.Color(0.95, 0.95, 0.95),
+                colors.white,
+                colors.Color(
+                    self.light_bronze.red,
+                    self.light_bronze.green,
+                    self.light_bronze.blue,
+                    0.2,
+                ),
             ]),
         ]
         table.setStyle(TableStyle(style))

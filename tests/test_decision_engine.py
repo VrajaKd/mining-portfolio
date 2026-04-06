@@ -1,3 +1,5 @@
+import math
+
 from modules.decision_engine import determine_action
 
 SETTINGS = {
@@ -38,8 +40,20 @@ def test_sell_priority_over_buy():
     assert determine_action(9.0, 6.0, 9, SETTINGS) == "SELL"
 
 
-def test_no_data():
+def test_no_data_both_none():
     assert determine_action(None, None, None, SETTINGS) == "NO_DATA"
+
+
+def test_no_data_score_only():
+    assert determine_action(8.0, None, 6, SETTINGS) == "NO_DATA"
+
+
+def test_no_data_ev_only():
+    assert determine_action(None, 5.0, 6, SETTINGS) == "NO_DATA"
+
+
+def test_no_data_but_high_risk_sells():
+    assert determine_action(None, None, 9, SETTINGS) == "SELL"
 
 
 def test_buy_threshold_exact():
@@ -48,3 +62,11 @@ def test_buy_threshold_exact():
 
 def test_below_buy_but_add():
     assert determine_action(8.0, 5.0, 5, SETTINGS) == "ADD"
+
+
+def test_no_data_nan_score():
+    assert determine_action(math.nan, math.nan, 6, SETTINGS) == "NO_DATA"
+
+
+def test_no_data_nan_high_risk_sells():
+    assert determine_action(math.nan, math.nan, 9, SETTINGS) == "SELL"

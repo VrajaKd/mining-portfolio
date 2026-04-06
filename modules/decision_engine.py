@@ -17,15 +17,18 @@ def determine_action(
     add_ev = decision.get("add_ev_min", 5.0)
     hold_score = decision.get("hold_score_min", 7.0)
 
-    if score is None and ev is None:
+    if pd.isna(score) or pd.isna(ev):
+        # Can't make a decision without both score and EV
+        if not pd.isna(risk) and risk >= sell_risk:
+            return "SELL"
         return "NO_DATA"
 
     # Priority: SELL > BUY > ADD > HOLD
     if risk is not None and risk >= sell_risk:
         return "SELL"
 
-    s = score if score is not None else 0.0
-    e = ev if ev is not None else 0.0
+    s = score
+    e = ev
 
     if s >= buy_score and e >= buy_ev:
         return "BUY"

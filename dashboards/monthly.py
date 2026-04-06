@@ -2,6 +2,7 @@ from pathlib import Path
 
 import streamlit as st
 
+from dashboards.components import alert_info
 from dashboards.shared import load_and_enrich
 
 
@@ -9,7 +10,7 @@ def render(settings: dict):
     st.title("Monthly Strategic Review")
 
     if "raw_portfolio" not in st.session_state:
-        st.info("Load portfolio data on the Daily page first.")
+        alert_info("Load portfolio data on the Daily page first.")
         return
 
     from modules.ingestion import normalize_holdings
@@ -68,7 +69,7 @@ def render(settings: dict):
         )
         st.dataframe(comm, use_container_width=True)
     else:
-        st.info(
+        alert_info(
             "Commodity data not available. "
             "Add commodity field to portfolio data."
         )
@@ -92,7 +93,7 @@ def render(settings: dict):
         )
         st.dataframe(region, use_container_width=True)
     else:
-        st.info(
+        alert_info(
             "Region data not available. "
             "Add jurisdiction field to portfolio data."
         )
@@ -108,7 +109,7 @@ def render(settings: dict):
         ).round(2)
         st.dataframe(tiers, use_container_width=True)
     else:
-        st.info("Score positions on the Daily page to see tier breakdown.")
+        alert_info("Score positions on the Daily page to see tier breakdown.")
 
     # Full portfolio table
     st.subheader("Full Portfolio")

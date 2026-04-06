@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+from dashboards.components import alert_error, alert_info, alert_success, alert_warning
 from dashboards.shared import get_db_path, load_and_enrich
 
 
@@ -117,7 +118,7 @@ def _render_scoring_input(
         save_scores(db_path, selected, raw_scores)
         ev_result["tier"] = tier
         save_ev_data(db_path, selected, ev_result)
-        st.success(f"Saved scores for {selected}")
+        alert_success(f"Saved scores for {selected}")
         st.rerun()
 
 
@@ -136,21 +137,28 @@ def _render_decision_table(enriched: pd.DataFrame):
     available = [c for c in display_cols if c in enriched.columns]
     view = enriched[available].copy()
 
-    def _color_action(val):
-        colors = {
-            "BUY": "background-color: #c6efce",
-            "ADD": "background-color: #c6efce",
-            "HOLD": "",
-            "SELL": "background-color: #ffc7ce",
-            "NO_DATA": "background-color: #ffeb9c",
-        }
-        return colors.get(val, "")
+    # Round numeric columns for clean display
+    num_cols = ["score", "ev_adjusted", "portfolio_weight_pct", "target_weight_pct"]
+    for col in num_cols:
+        if col in view.columns:
+            view[col] = view[col].round(2)
 
+    def _color_action(val):
+        action_colors = {
+            "BUY": "background-color: #6b8f71; color: white",
+            "ADD": "background-color: #355070; color: white",
+            "HOLD": "background-color: #eaac8b; color: #355070",
+            "SELL": "background-color: #e56b6f; color: white",
+            "NO_DATA": "background-color: #f5e6d8; color: #355070",
+        }
+        return action_colors.get(val, "")
+
+    fmt = {col: "{:.2f}" for col in num_cols if col in view.columns}
     if "action" in view.columns:
-        styled = view.style.map(_color_action, subset=["action"])
+        styled = view.style.map(_color_action, subset=["action"]).format(fmt, na_rep="None")
         st.dataframe(styled, use_container_width=True, hide_index=True)
     else:
-        st.dataframe(view, use_container_width=True, hide_index=True)
+        st.dataframe(view.style.format(fmt, na_rep="None"), use_container_width=True, hide_index=True)
 
 
 def _render_risk_flags(enriched: pd.DataFrame, settings: dict):
@@ -165,8 +173,8 @@ def _render_risk_flags(enriched: pd.DataFrame, settings: dict):
 
     st.subheader("Risk Flags")
     for _, row in high_risk.iterrows():
-        st.error(
-            f"**{row['ticker']}** — Risk {row['risk_score']} "
+        alert_error(
+            f"<b>{row['ticker']}</b> — Risk {row['risk_score']} "
             f"| Action: {row.get('action', 'N/A')}"
         )
 
@@ -200,7 +208,7 @@ def render(settings: dict):
                     ib.disconnect()
                     st.session_state["raw_portfolio"] = raw
                 except Exception as e:
-                    st.error(f"IB connection failed: {e}")
+                    alert_error(f"IB connection failed: {e}")
                     return
 
         if "raw_portfolio" in st.session_state:
@@ -214,11 +222,11 @@ def render(settings: dict):
 
                 df = parse_ib_csv(uploaded)
             except (ValueError, Exception) as e:
-                st.error(f"CSV parse error: {e}")
+                alert_error(f"CSV parse error: {e}")
                 return
 
     if df.empty:
-        st.info("Load portfolio data to begin.")
+        alert_info("Load portfolio data to begin.")
         return
 
     from modules.ingestion import normalize_holdings, validate_holdings
@@ -228,7 +236,7 @@ def render(settings: dict):
 
     if warnings:
         for w in warnings:
-            st.warning(w)
+            alert_warning(w)
 
     # Summary metrics
     col1, col2 = st.columns(2)
