@@ -29,5 +29,8 @@ Thumbs.db
 help.txt
 review.md
 
+# Generated reports
+reports/*.pdf
+
 # uv
 .python-version
