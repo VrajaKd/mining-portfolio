@@ -156,13 +156,14 @@ def render(settings: dict):
 
     # PDF export
     st.divider()
-    if st.button("Export Weekly PDF"):
-        from reports.pdf_generator import WeeklyPDFReport
+    from reports.pdf_generator import WeeklyPDFReport
 
-        output = Path(
-            settings.get("paths", {}).get("output_reports", "reports")
+    output = Path(
+        settings.get("paths", {}).get("output_reports", "reports")
+    )
+    output.mkdir(parents=True, exist_ok=True)
+    path = WeeklyPDFReport(settings).generate(enriched, output)
+    with open(path, "rb") as f:
+        st.download_button(
+            "Export Weekly PDF", f, file_name=path.name
         )
-        output.mkdir(parents=True, exist_ok=True)
-        path = WeeklyPDFReport(settings).generate(enriched, output)
-        with open(path, "rb") as f:
-            st.download_button("Download PDF", f, file_name=path.name)

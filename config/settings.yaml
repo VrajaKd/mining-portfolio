@@ -69,17 +69,4 @@ paths:
 data:
   primary_currency: USD
 
-pdf:
-  font: Helvetica
-  accent_color: "#355070"
-  version: "V7 MVP"
-
-theme:
-  dusk_blue: "#355070"
-  dusty_lavender: "#6d597a"
-  sage_green: "#6b8f71"
-  rosewood: "#b56576"
-  light_coral: "#e56b6f"
-  light_bronze: "#eaac8b"
-
 rubrics_file: config/scoring_rubrics.yaml

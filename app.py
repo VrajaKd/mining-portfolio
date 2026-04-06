@@ -25,6 +25,11 @@ def main():
         section[data-testid="stSidebar"] {
             background-color: #355070;
         }
+        /* Center content with max width */
+        section[data-testid="stMain"] > div {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
         /* Sidebar nav buttons — look like text links */
         section[data-testid="stSidebar"] button,
         section[data-testid="stSidebar"] button p,

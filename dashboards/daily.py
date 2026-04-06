@@ -5,7 +5,6 @@ import streamlit as st
 
 from dashboards.components import alert_error, alert_info, alert_success, alert_warning
 from dashboards.shared import (
-    DISPLAY_NAMES,
     get_db_path,
     load_and_enrich,
     rename_for_display,
@@ -13,7 +12,9 @@ from dashboards.shared import (
 
 
 def _render_scoring_input(
-    tickers: list[str], settings: dict
+    tickers: list[str],
+    settings: dict,
+    preselected: str | None = None,
 ):
     from modules.ev_engine import calculate_ev, determine_tier
     from modules.persistence import (
@@ -37,9 +38,9 @@ def _render_scoring_input(
     rubrics_path = settings.get("rubrics_file", "config/scoring_rubrics.yaml")
     rubrics = load_rubrics(rubrics_path)
 
-    st.subheader("Score Input")
+    st.subheader(f"Score: {preselected}")
 
-    selected = st.selectbox("Select ticker", tickers)
+    selected = preselected
     if not selected:
         return
 
@@ -58,7 +59,7 @@ def _render_scoring_input(
             max_value=10.0,
             value=float(default),
             step=0.5,
-            key=f"score_{criterion}",
+            key=f"score_{selected}_{criterion}",
         )
         raw_scores[criterion] = val
         hint = get_scoring_rubric(rubrics, criterion, val)
@@ -79,6 +80,7 @@ def _render_scoring_input(
         max_value=float(up_range.get("max", 50)),
         value=float(existing_ev.get("upside_multiple", 10.0) or 10.0),
         step=1.0,
+        key=f"ev_upside_{selected}",
     )
     probability = st.number_input(
         "Success probability",
@@ -86,6 +88,7 @@ def _render_scoring_input(
         max_value=float(prob_range.get("max", 0.80)),
         value=float(existing_ev.get("success_probability", 0.50) or 0.50),
         step=0.05,
+        key=f"ev_prob_{selected}",
     )
     downside = st.number_input(
         "Downside",
@@ -93,28 +96,44 @@ def _render_scoring_input(
         max_value=10.0,
         value=float(existing_ev.get("downside", 1.0) or 1.0),
         step=0.5,
+        key=f"ev_down_{selected}",
     )
-    catalyst_timing = st.selectbox(
+    catalyst_labels = {
+        "Near term (×1.2)": "near_term",
+        "Mid term (×1.0)": "mid_term",
+        "Long term (×0.8)": "long_term",
+    }
+    label_list = list(catalyst_labels.keys())
+    value_list = list(catalyst_labels.values())
+    current_value = existing_ev.get("catalyst_timing", "mid_term") or "mid_term"
+    catalyst_label = st.selectbox(
         "Catalyst timing",
-        ["near_term", "mid_term", "long_term"],
-        index=["near_term", "mid_term", "long_term"].index(
-            existing_ev.get("catalyst_timing", "mid_term") or "mid_term"
-        ),
+        label_list,
+        index=value_list.index(current_value),
+        key=f"ev_catalyst_{selected}",
     )
+    catalyst_timing = catalyst_labels[catalyst_label]
 
     ev_result = calculate_ev(
         upside, probability, downside, catalyst_timing, settings
     )
     tier = determine_tier(ev_result["ev_adjusted"], settings)
 
+    tier_labels = {
+        "core": "Core",
+        "core_min": "Core (min)",
+        "secondary": "Secondary",
+        "speculative": "Speculative",
+    }
+
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("EV (adjusted)", f"{ev_result['ev_adjusted']:.2f}")
+        st.metric("Expected Value", f"{ev_result['ev_adjusted']:.2f}")
     with col2:
-        st.metric("Tier", tier.upper())
+        st.metric("Tier", tier_labels.get(tier, tier))
     with col3:
         st.metric(
-            "Catalyst",
+            "Catalyst multiplier",
             f"×{ev_result['catalyst_multiplier']:.1f}",
         )
 
@@ -141,7 +160,6 @@ def _render_decision_table(enriched: pd.DataFrame):
     ]
     available = [c for c in display_cols if c in enriched.columns]
     view = enriched[available].copy()
-
     view = rename_for_display(view)
 
     def _color_action(val):
@@ -154,7 +172,7 @@ def _render_decision_table(enriched: pd.DataFrame):
         }
         return action_colors.get(val, "")
 
-    action_col = DISPLAY_NAMES["action"]
+    action_col = "Action"
     if action_col in view.columns:
         styled = view.style.map(
             _color_action, subset=[action_col]
@@ -255,27 +273,33 @@ def render(settings: dict):
     # Decision table
     _render_decision_table(enriched)
 
+    # Ticker selection — visually connected to table
+    tickers = enriched["ticker"].tolist()
+    selected = st.pills(
+        "Score a position — select ticker",
+        tickers,
+        label_visibility="collapsed",
+    )
+
+    if selected:
+        _render_scoring_input(tickers, settings, selected)
+
     # Risk flags
     _render_risk_flags(enriched, settings)
 
     # Swap candidates
     _render_swap_candidates(enriched, settings)
 
-    # Scoring input (collapsible)
-    with st.expander("Score a position", expanded=False):
-        _render_scoring_input(
-            enriched["ticker"].tolist(), settings
-        )
-
     # PDF export
     st.divider()
-    if st.button("Export Daily PDF"):
-        from reports.pdf_generator import DailyPDFReport
+    from reports.pdf_generator import DailyPDFReport
 
-        output = Path(
-            settings.get("paths", {}).get("output_reports", "reports")
+    output = Path(
+        settings.get("paths", {}).get("output_reports", "reports")
+    )
+    output.mkdir(parents=True, exist_ok=True)
+    path = DailyPDFReport(settings).generate(enriched, output)
+    with open(path, "rb") as f:
+        st.download_button(
+            "Export Daily PDF", f, file_name=path.name
         )
-        output.mkdir(parents=True, exist_ok=True)
-        path = DailyPDFReport(settings).generate(enriched, output)
-        with open(path, "rb") as f:
-            st.download_button("Download PDF", f, file_name=path.name)

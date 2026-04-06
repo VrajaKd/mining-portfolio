@@ -26,6 +26,11 @@ DISPLAY_NAMES = {
     "commodity": "Commodity",
     "jurisdiction": "Jurisdiction",
     "company_name": "Company",
+    "positions": "Positions",
+    "weight": "Weight %",
+    "avg_score": "Avg Score",
+    "avg_ev": "Avg EV",
+    "final_score": "Final Score",
 }
 
 

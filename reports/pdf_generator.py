@@ -16,6 +16,8 @@ from reportlab.platypus import (
     TableStyle,
 )
 
+from dashboards.shared import DISPLAY_NAMES
+
 
 class PortfolioPDFReport:
     """Base class for all PDF reports."""
@@ -89,6 +91,34 @@ class PortfolioPDFReport:
                 ),
             ]),
         ]
+
+        # Color Action cells
+        action_colors = {
+            "BUY": (self.sage_green, colors.white),
+            "ADD": (self.dusk_blue, colors.white),
+            "HOLD": (self.light_bronze, self.dusk_blue),
+            "SELL": (self.light_coral, colors.white),
+            "No Score": (
+                colors.Color(0.96, 0.90, 0.85),
+                self.dusk_blue,
+            ),
+        }
+        header = data[0] if data else []
+        if "Action" in header:
+            col_idx = header.index("Action")
+            for row_idx, row in enumerate(data[1:], start=1):
+                action = row[col_idx]
+                if action in action_colors:
+                    bg, fg = action_colors[action]
+                    style.append(
+                        ("BACKGROUND", (col_idx, row_idx),
+                         (col_idx, row_idx), bg)
+                    )
+                    style.append(
+                        ("TEXTCOLOR", (col_idx, row_idx),
+                         (col_idx, row_idx), fg)
+                    )
+
         table.setStyle(TableStyle(style))
         return table
 
@@ -110,17 +140,24 @@ class PortfolioPDFReport:
         self, df: pd.DataFrame, columns: list[str]
     ) -> list[list[str]]:
         available = [c for c in columns if c in df.columns]
-        header = [c.replace("_", " ").title() for c in available]
+        header = [
+            DISPLAY_NAMES.get(c, c.replace("_", " ").title())
+            for c in available
+        ]
         rows = []
         for _, row in df.iterrows():
-            rows.append(
-                [
-                    str(round(row[c], 2))
-                    if isinstance(row[c], float)
-                    else str(row[c] or "")
-                    for c in available
-                ]
-            )
+            cells = []
+            for c in available:
+                val = row[c]
+                if pd.isna(val):
+                    cells.append("—")
+                elif isinstance(val, float):
+                    cells.append(f"{val:.2f}")
+                elif val == "NO_DATA":
+                    cells.append("No Score")
+                else:
+                    cells.append(str(val))
+            rows.append(cells)
         return [header, *rows]
 
 
