@@ -242,6 +242,7 @@ def render(settings: dict):
                 from modules.ingestion import parse_ib_csv
 
                 df = parse_ib_csv(uploaded)
+                st.session_state["raw_portfolio"] = df
             except (ValueError, Exception) as e:
                 alert_error(f"CSV parse error: {e}")
                 return

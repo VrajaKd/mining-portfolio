@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import (
@@ -16,7 +16,7 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from dashboards.shared import DISPLAY_NAMES
+from dashboards.shared import DISPLAY_NAMES, TIER_LABELS
 
 
 class PortfolioPDFReport:
@@ -155,6 +155,8 @@ class PortfolioPDFReport:
                     cells.append(f"{val:.2f}")
                 elif val == "NO_DATA":
                     cells.append("No Score")
+                elif val in TIER_LABELS:
+                    cells.append(TIER_LABELS[val])
                 else:
                     cells.append(str(val))
             rows.append(cells)
@@ -169,7 +171,7 @@ class DailyPDFReport(PortfolioPDFReport):
         path = output_dir / filename
         doc = SimpleDocTemplate(
             str(path),
-            pagesize=landscape(A4),
+            pagesize=A4,
             leftMargin=0.75 * inch,
             rightMargin=0.75 * inch,
             topMargin=0.75 * inch,
@@ -238,7 +240,7 @@ class WeeklyPDFReport(PortfolioPDFReport):
         path = output_dir / filename
         doc = SimpleDocTemplate(
             str(path),
-            pagesize=landscape(A4),
+            pagesize=A4,
             leftMargin=0.75 * inch,
             rightMargin=0.75 * inch,
             topMargin=0.75 * inch,

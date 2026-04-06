@@ -32,20 +32,24 @@ def render(settings: dict):
         )
         best = enriched.loc[enriched["unrealized_pl"].idxmax()] if has_pl else None
         if best is not None:
+            best_pl = best["unrealized_pl"]
             st.metric(
                 "Best Position",
                 best["ticker"],
-                f"${best['unrealized_pl']:+,.2f}",
+                delta=round(best_pl, 2),
+                delta_color="normal",
             )
         else:
             st.metric("Best Position", "N/A")
     with col3:
         worst = enriched.loc[enriched["unrealized_pl"].idxmin()] if has_pl else None
         if worst is not None:
+            worst_pl = worst["unrealized_pl"]
             st.metric(
                 "Worst Position",
                 worst["ticker"],
-                f"${worst['unrealized_pl']:+,.2f}",
+                delta=round(worst_pl, 2),
+                delta_color="normal",
             )
         else:
             st.metric("Worst Position", "N/A")

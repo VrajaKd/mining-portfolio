@@ -38,6 +38,13 @@ ACTION_LABELS = {
     "NO_DATA": "No Score",
 }
 
+TIER_LABELS = {
+    "core": "Core",
+    "core_min": "Core (min)",
+    "secondary": "Secondary",
+    "speculative": "Speculative",
+}
+
 
 def rename_for_display(df: pd.DataFrame) -> pd.DataFrame:
     renames = {
@@ -47,6 +54,9 @@ def rename_for_display(df: pd.DataFrame) -> pd.DataFrame:
     action_col = DISPLAY_NAMES.get("action", "action")
     if action_col in result.columns:
         result[action_col] = result[action_col].replace(ACTION_LABELS)
+    tier_col = DISPLAY_NAMES.get("tier", "tier")
+    if tier_col in result.columns:
+        result[tier_col] = result[tier_col].replace(TIER_LABELS)
     # Format numbers and replace NaN
     for col in result.columns:
         if result[col].dtype in ("float64", "float32"):
