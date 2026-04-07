@@ -311,12 +311,36 @@ def render(settings: dict):
             alert_warning(w)
 
     # Summary metrics
-    col1, col2 = st.columns(2)
-    with col1:
-        total_value = normalized["market_value"].sum()
-        st.metric("Total Portfolio Value", f"${total_value:,.2f}")
-    with col2:
-        st.metric("Positions", len(normalized))
+    account = df.attrs.get("account_summary", {})
+    nlv = account.get("net_liquidation")
+    cash = account.get("cash")
+    gross = sum(abs(v) for v in normalized["market_value"])
+    unrealized = (
+        normalized["unrealized_pl"].sum()
+        if "unrealized_pl" in normalized.columns
+        else None
+    )
+
+    cols = st.columns(4 if nlv else 3)
+    if nlv:
+        with cols[0]:
+            st.metric("Net Liquidation", f"${nlv:,.2f}")
+        with cols[1]:
+            st.metric("Cash", f"${cash:,.2f}" if cash else "—")
+        with cols[2]:
+            st.metric("Gross Exposure", f"${gross:,.2f}")
+        with cols[3]:
+            st.metric("Positions", len(normalized))
+    else:
+        with cols[0]:
+            st.metric("Gross Exposure", f"${gross:,.2f}")
+        with cols[1]:
+            if unrealized is not None and pd.notna(unrealized):
+                st.metric("Unrealized P&L", f"${unrealized:,.2f}")
+            else:
+                st.metric("Positions", len(normalized))
+        with cols[2]:
+            st.metric("Positions", len(normalized))
 
     # Enrich with scoring data
     enriched = load_and_enrich(normalized, settings)

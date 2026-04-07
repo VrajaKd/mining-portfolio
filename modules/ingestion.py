@@ -60,11 +60,137 @@ def fetch_portfolio(ib) -> pd.DataFrame:
             }
         )
 
-    return pd.DataFrame(rows)
+    df = pd.DataFrame(rows)
+
+    # Account summary
+    summary = {}
+    try:
+        account_values = ib.accountSummary()
+        for av in account_values:
+            if av.tag == "NetLiquidation":
+                summary["net_liquidation"] = float(av.value)
+            elif av.tag == "TotalCashValue":
+                summary["cash"] = float(av.value)
+            elif av.tag == "GrossPositionValue":
+                summary["gross_exposure"] = float(av.value)
+    except Exception:
+        pass
+    df.attrs["account_summary"] = summary
+
+    return df
 
 
-def parse_ib_csv(filepath: str | Path) -> pd.DataFrame:
-    """Parse an IB CSV export as fallback when API is unavailable."""
+def _parse_activity_statement(filepath: str | Path) -> pd.DataFrame:
+    """Parse IB Activity Statement CSV (multi-section format)."""
+    # Detect max columns, then read with enough space
+    import csv
+    import io
+
+    if hasattr(filepath, "read"):
+        content = filepath.read()
+        if isinstance(content, bytes):
+            content = content.decode("utf-8-sig")
+    else:
+        content = Path(filepath).read_text(encoding="utf-8-sig")
+    content = content.lstrip("\ufeff")
+    reader = csv.reader(io.StringIO(content))
+    max_cols = max(len(row) for row in reader)
+    col_names = list(range(max_cols))
+    raw = pd.read_csv(
+        io.StringIO(content), header=None, names=col_names,
+        dtype=str, keep_default_na=False,
+    )
+
+    # Find Open Positions data rows
+    mask = (raw.iloc[:, 0] == "Open Positions") & (raw.iloc[:, 1] == "Data")
+    positions = raw[mask].copy()
+    if positions.empty:
+        raise ValueError("No Open Positions found in Activity Statement")
+
+    # Filter Summary rows only (skip Total rows)
+    positions = positions[positions.iloc[:, 2] == "Summary"]
+    if positions.empty:
+        raise ValueError("No Open Positions Summary rows found")
+
+    # Header is at row where col[1] == "Header"
+    header_mask = (raw.iloc[:, 0] == "Open Positions") & (raw.iloc[:, 1] == "Header")
+    header_row = raw[header_mask].iloc[0].tolist()
+
+    # Build DataFrame with proper column names
+    positions.columns = header_row
+    positions = positions.rename(columns={
+        "Symbol": "ticker",
+        "Currency": "currency",
+        "Quantity": "quantity",
+        "Cost Price": "avg_cost",
+        "Value": "market_value",
+        "Unrealized P/L": "unrealized_pl",
+    })
+
+    # Get description from Financial Instrument Information section
+    fi_section = "Financial Instrument Information"
+    fi_mask = (raw.iloc[:, 0] == fi_section) & (raw.iloc[:, 1] == "Data")
+    fi_rows = raw[fi_mask]
+    if not fi_rows.empty:
+        fi_header_mask = (
+            (raw.iloc[:, 0] == fi_section) & (raw.iloc[:, 1] == "Header")
+        )
+        fi_header = raw[fi_header_mask].iloc[0].tolist()
+        fi_df = fi_rows.copy()
+        fi_df.columns = fi_header
+        desc_map = dict(zip(fi_df["Symbol"], fi_df["Description"]))
+        positions["company_name"] = positions["ticker"].map(desc_map)
+
+    # Convert numeric columns
+    for col in ["quantity", "avg_cost", "market_value", "unrealized_pl"]:
+        if col in positions.columns:
+            positions[col] = pd.to_numeric(positions[col], errors="coerce")
+
+    required = ["ticker", "currency", "quantity", "market_value"]
+    missing = [c for c in required if c not in positions.columns]
+    if missing:
+        raise ValueError(f"Missing required columns: {missing}")
+
+    # Extract account summary from NAV section
+    nav_mask = (
+        (raw.iloc[:, 0] == "Net Asset Value")
+        & (raw.iloc[:, 1] == "Data")
+    )
+    nav_rows = raw[nav_mask]
+    account_summary = {}
+    # NAV columns: 2=label, 3=Prior, 4=Long, 5=Short, 6=Total, 7=Change
+    for _, row in nav_rows.iterrows():
+        label = str(row.iloc[2]).strip()
+        if label == "Total":
+            account_summary["net_liquidation"] = _to_float(
+                row.iloc[6]
+            )
+        elif label.startswith("Cash"):
+            account_summary["cash"] = _to_float(row.iloc[6])
+        elif label == "Stock":
+            account_summary["stock_value"] = _to_float(
+                row.iloc[6]
+            )
+
+    result = positions[
+        [c for c in [
+            "ticker", "company_name", "currency", "quantity",
+            "market_value", "avg_cost", "unrealized_pl",
+        ] if c in positions.columns]
+    ].reset_index(drop=True)
+    result.attrs["account_summary"] = account_summary
+    return result
+
+
+def _to_float(val) -> float | None:
+    try:
+        return float(str(val).strip())
+    except (ValueError, TypeError):
+        return None
+
+
+def _parse_simple_csv(filepath: str | Path) -> pd.DataFrame:
+    """Parse simple CSV with standard column headers."""
     df = pd.read_csv(filepath)
 
     column_map = {
@@ -86,6 +212,28 @@ def parse_ib_csv(filepath: str | Path) -> pd.DataFrame:
         raise ValueError(f"Missing required columns: {missing}")
 
     return df
+
+
+def parse_ib_csv(filepath: str | Path) -> pd.DataFrame:
+    """Parse IB CSV — auto-detects Activity Statement or simple format."""
+    import csv
+    import io
+
+    if hasattr(filepath, "read"):
+        content = filepath.read()
+        if isinstance(content, bytes):
+            content = content.decode("utf-8")
+        filepath.seek(0)
+    else:
+        content = Path(filepath).read_text()
+
+    reader = csv.reader(io.StringIO(content))
+    first_row = next(reader, [])
+    first_cell = first_row[0].strip().lstrip("\ufeff") if first_row else ""
+
+    if first_cell == "Statement":
+        return _parse_activity_statement(filepath)
+    return _parse_simple_csv(filepath)
 
 
 def normalize_holdings(raw_df: pd.DataFrame) -> pd.DataFrame:
