@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -214,7 +215,9 @@ def _render_swap_candidates(enriched: pd.DataFrame, settings: dict):
 def render(settings: dict):
     st.title("Daily Portfolio Overview")
 
-    source = st.radio("Data source", ["IB API", "CSV Upload"], horizontal=True)
+    ib_available = bool(os.environ.get("IBKR_HOST"))
+    sources = ["IB API", "CSV Upload"] if ib_available else ["CSV Upload"]
+    source = st.radio("Data source", sources, horizontal=True)
 
     df = pd.DataFrame()
 
