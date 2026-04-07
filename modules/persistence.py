@@ -172,7 +172,6 @@ def save_raw_portfolio(
     db_path: str | Path, df: pd.DataFrame
 ) -> None:
     with sqlite3.connect(db_path) as conn:
-        conn.execute("DELETE FROM raw_portfolio")
         df.to_sql("raw_portfolio", conn, if_exists="replace", index=False)
 
 
