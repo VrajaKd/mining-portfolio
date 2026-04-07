@@ -168,6 +168,24 @@ def load_all_ev_data(db_path: str | Path) -> pd.DataFrame:
     return df
 
 
+def save_raw_portfolio(
+    db_path: str | Path, df: pd.DataFrame
+) -> None:
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("DELETE FROM raw_portfolio")
+        df.to_sql("raw_portfolio", conn, if_exists="replace", index=False)
+
+
+def load_raw_portfolio(db_path: str | Path) -> pd.DataFrame:
+    with sqlite3.connect(db_path) as conn:
+        tables = conn.execute(
+            "SELECT name FROM sqlite_master WHERE name='raw_portfolio'"
+        ).fetchone()
+        if not tables:
+            return pd.DataFrame()
+        return pd.read_sql("SELECT * FROM raw_portfolio", conn)
+
+
 def save_portfolio_snapshot(
     db_path: str | Path,
     df: pd.DataFrame,

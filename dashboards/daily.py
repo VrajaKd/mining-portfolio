@@ -138,13 +138,21 @@ def _render_scoring_input(
             f"×{ev_result['catalyst_multiplier']:.1f}",
         )
 
-    if st.button("Save Scores", type="primary"):
-        raw_scores["final_score"] = preview_score
-        save_scores(db_path, selected, raw_scores)
-        ev_result["tier"] = tier
-        save_ev_data(db_path, selected, ev_result)
-        alert_success(f"Saved scores for {selected}")
-        st.rerun()
+    col_save, col_top = st.columns([1, 1])
+    with col_save:
+        if st.button("Save Scores", type="primary"):
+            raw_scores["final_score"] = preview_score
+            save_scores(db_path, selected, raw_scores)
+            ev_result["tier"] = tier
+            save_ev_data(db_path, selected, ev_result)
+            alert_success(f"Saved scores for {selected}")
+            st.rerun()
+    with col_top:
+        st.markdown(
+            '<a href="#daily-portfolio-overview"'
+            ' style="color: #6d597a;">↑ Back to top</a>',
+            unsafe_allow_html=True,
+        )
 
 
 def _render_decision_table(enriched: pd.DataFrame):
@@ -219,6 +227,15 @@ def render(settings: dict):
     sources = ["IB API", "CSV Upload"] if ib_available else ["CSV Upload"]
     source = st.radio("Data source", sources, horizontal=True)
 
+    from modules.persistence import (
+        init_database,
+        load_raw_portfolio,
+        save_raw_portfolio,
+    )
+
+    db_path = get_db_path(settings)
+    init_database(db_path)
+
     df = pd.DataFrame()
 
     if source == "IB API":
@@ -231,6 +248,7 @@ def render(settings: dict):
                     raw = fetch_portfolio(ib)
                     ib.disconnect()
                     st.session_state["raw_portfolio"] = raw
+                    save_raw_portfolio(db_path, raw)
                 except Exception as e:
                     alert_error(f"IB connection failed: {e}")
                     return
@@ -246,9 +264,17 @@ def render(settings: dict):
 
                 df = parse_ib_csv(uploaded)
                 st.session_state["raw_portfolio"] = df
+                save_raw_portfolio(db_path, df)
             except (ValueError, Exception) as e:
                 alert_error(f"CSV parse error: {e}")
                 return
+
+    # Restore from database if session lost (page refresh)
+    if df.empty and "raw_portfolio" not in st.session_state:
+        saved = load_raw_portfolio(db_path)
+        if not saved.empty:
+            st.session_state["raw_portfolio"] = saved
+            df = saved
 
     if df.empty:
         alert_info("Load portfolio data to begin.")

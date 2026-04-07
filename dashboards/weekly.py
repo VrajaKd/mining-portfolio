@@ -12,8 +12,14 @@ def render(settings: dict):
     st.title("Weekly Portfolio Review")
 
     if "raw_portfolio" not in st.session_state:
-        alert_info("Load portfolio data on the Daily page first.")
-        return
+        from modules.persistence import load_raw_portfolio
+
+        saved = load_raw_portfolio(get_db_path(settings))
+        if not saved.empty:
+            st.session_state["raw_portfolio"] = saved
+        else:
+            alert_info("Load portfolio data on the Daily page first.")
+            return
 
     from modules.ingestion import normalize_holdings
 

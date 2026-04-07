@@ -3,15 +3,21 @@ from pathlib import Path
 import streamlit as st
 
 from dashboards.components import alert_info
-from dashboards.shared import load_and_enrich, rename_for_display
+from dashboards.shared import get_db_path, load_and_enrich, rename_for_display
 
 
 def render(settings: dict):
     st.title("Monthly Strategic Review")
 
     if "raw_portfolio" not in st.session_state:
-        alert_info("Load portfolio data on the Daily page first.")
-        return
+        from modules.persistence import load_raw_portfolio
+
+        saved = load_raw_portfolio(get_db_path(settings))
+        if not saved.empty:
+            st.session_state["raw_portfolio"] = saved
+        else:
+            alert_info("Load portfolio data on the Daily page first.")
+            return
 
     from modules.ingestion import normalize_holdings
 
