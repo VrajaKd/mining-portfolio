@@ -253,9 +253,6 @@ def render(settings: dict):
                     alert_error(f"IB connection failed: {e}")
                     return
 
-        if "raw_portfolio" in st.session_state:
-            df = st.session_state["raw_portfolio"]
-
     else:
         uploaded = st.file_uploader("Upload IB CSV export", type=["csv"])
         if uploaded is not None:
@@ -269,8 +266,10 @@ def render(settings: dict):
                 alert_error(f"CSV parse error: {e}")
                 return
 
-    # Restore from database if session lost (page refresh)
-    if df.empty and "raw_portfolio" not in st.session_state:
+    # Restore from session or database
+    if df.empty and "raw_portfolio" in st.session_state:
+        df = st.session_state["raw_portfolio"]
+    if df.empty:
         saved = load_raw_portfolio(db_path)
         if not saved.empty:
             st.session_state["raw_portfolio"] = saved
