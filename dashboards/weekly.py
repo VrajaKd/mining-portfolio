@@ -4,7 +4,12 @@ import pandas as pd
 import streamlit as st
 
 from dashboards.components import alert_error, alert_info, alert_success, alert_warning
-from dashboards.shared import get_db_path, load_and_enrich, rename_for_display
+from dashboards.shared import (
+    get_db_path,
+    load_and_enrich,
+    rename_for_display,
+    style_action_column,
+)
 from modules.persistence import SCORE_CRITERIA
 
 
@@ -96,7 +101,7 @@ def render(settings: dict):
         gap_view = gap_view.sort_values("delta_pct")
 
     st.dataframe(
-        rename_for_display(gap_view),
+        style_action_column(rename_for_display(gap_view)),
         use_container_width=True,
         hide_index=True,
     )
@@ -160,7 +165,7 @@ def render(settings: dict):
         best_cols = ["ticker", "score", "ev_adjusted", "tier", "action"]
         available = [c for c in best_cols if c in top5.columns]
         st.dataframe(
-            rename_for_display(top5[available]),
+            style_action_column(rename_for_display(top5[available])),
             use_container_width=True,
             hide_index=True,
         )

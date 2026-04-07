@@ -9,6 +9,7 @@ from dashboards.shared import (
     get_db_path,
     load_and_enrich,
     rename_for_display,
+    style_action_column,
 )
 
 _BACK_TO_TOP = (
@@ -191,24 +192,11 @@ def _render_decision_table(enriched: pd.DataFrame):
     view = enriched[available].copy()
     view = rename_for_display(view)
 
-    def _color_action(val):
-        action_colors = {
-            "BUY": "background-color: #6b8f71; color: white",
-            "ADD": "background-color: #355070; color: white",
-            "HOLD": "background-color: #eaac8b; color: #355070",
-            "SELL": "background-color: #e56b6f; color: white",
-            "No Score": "background-color: #f5e6d8; color: #355070",
-        }
-        return action_colors.get(val, "")
-
-    action_col = "Action"
-    if action_col in view.columns:
-        styled = view.style.map(
-            _color_action, subset=[action_col]
-        )
-        st.dataframe(styled, use_container_width=True, hide_index=True)
-    else:
-        st.dataframe(view, use_container_width=True, hide_index=True)
+    st.dataframe(
+        style_action_column(view),
+        use_container_width=True,
+        hide_index=True,
+    )
 
 
 def _render_risk_flags(enriched: pd.DataFrame, settings: dict) -> bool:

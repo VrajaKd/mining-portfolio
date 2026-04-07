@@ -68,6 +68,26 @@ def rename_for_display(df: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
+ACTION_COLORS = {
+    "BUY": "background-color: #6b8f71; color: white",
+    "ADD": "background-color: #355070; color: white",
+    "HOLD": "background-color: #eaac8b; color: #355070",
+    "SELL": "background-color: #e56b6f; color: white",
+    "No Score": "background-color: #f5e6d8; color: #355070",
+}
+
+
+def style_action_column(view: pd.DataFrame):
+    """Apply action colors and return styled dataframe."""
+    action_col = "Action"
+    if action_col in view.columns:
+        return view.style.map(
+            lambda val: ACTION_COLORS.get(val, ""),
+            subset=[action_col],
+        )
+    return view
+
+
 def get_db_path(settings: dict) -> str:
     return settings.get("paths", {}).get(
         "database", "data/processed/scoring_data.db"

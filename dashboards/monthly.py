@@ -3,7 +3,12 @@ from pathlib import Path
 import streamlit as st
 
 from dashboards.components import alert_info
-from dashboards.shared import get_db_path, load_and_enrich, rename_for_display
+from dashboards.shared import (
+    get_db_path,
+    load_and_enrich,
+    rename_for_display,
+    style_action_column,
+)
 
 
 def render(settings: dict):
@@ -135,10 +140,13 @@ def render(settings: dict):
         "action",
     ]
     available = [c for c in display_cols if c in enriched.columns]
+    view = rename_for_display(
+        enriched[available].sort_values(
+            "portfolio_weight_pct", ascending=False
+        )
+    )
     st.dataframe(
-        rename_for_display(
-            enriched[available].sort_values("portfolio_weight_pct", ascending=False)
-        ),
+        style_action_column(view),
         use_container_width=True,
         hide_index=True,
     )
