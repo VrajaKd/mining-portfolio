@@ -38,6 +38,9 @@ Exit: tais susteem — skoori sisestamine, soovitused, PDF eksport.
 
 **Milestone 3 — $650**
 Unit/integration testid, config cleanup, dokumentatsioon, bug fixes tagasisidest, handover.
+- Settings UI (Streamlit leht) — klient saab lavendeid ja kaalusid muuta ilma YAML-i redigeerimata
+- Portfolio snapshots ja ajaloolised trendid
+
 Exit: production-ready susteem dokumentatsiooniga.
 
 **Milestone 4 — $600 (UUS, ootab kliendi kinnistust)**
