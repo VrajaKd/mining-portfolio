@@ -32,6 +32,14 @@ model:
     sell_candidate: 9
     swap_trigger: 9
     weak_holding: 7
+    score_sell: 6.5
+    score_weak: 7.0
+    score_ok: 7.5
+    score_good: 8.0
+    ev_sell: 2.5
+    ev_weak: 3.0
+    ev_ok: 3.5
+    ev_good: 4.5
 
   position_size:
     core_min: 0.06

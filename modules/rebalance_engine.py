@@ -12,17 +12,20 @@ def calculate_target_weights(
     constraints = settings.get("model", {}).get("portfolio_constraints", {})
     max_single = constraints.get("max_single_position", 0.25)
 
+    default_tier = "secondary"
+
     def _target_weight(row):
-        tier = row.get("tier")
+        tier = row.get("tier") or default_tier
         if tier == "core":
             return pos.get("core_max", 0.10)
         elif tier == "core_min":
             return pos.get("core_min", 0.06)
         elif tier == "secondary":
-            return (pos.get("secondary_min", 0.03) + pos.get("secondary_max", 0.06)) / 2
+            avg = (pos.get("secondary_min", 0.03) + pos.get("secondary_max", 0.06)) / 2
+            return avg
         elif tier == "speculative":
             return pos.get("speculative_min", 0.01)
-        return 0.0
+        return pos.get("secondary_min", 0.03)
 
     result["target_weight_pct"] = result.apply(_target_weight, axis=1) * 100
     max_pct = max_single * 100
