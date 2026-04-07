@@ -149,8 +149,13 @@ def _render_scoring_input(
             st.rerun()
     with col_top:
         st.markdown(
-            '<a href="#daily-portfolio-overview"'
-            ' style="color: #6d597a;">↑ Back to top</a>',
+            "<style>"
+            ".back-top a { color: #6d597a; text-decoration: none; }"
+            ".back-top a:hover { color: #9b85a6; }"
+            "</style>"
+            '<div class="back-top" style="text-align: right;">'
+            '<a href="#daily-portfolio-overview">↑ Back to top</a>'
+            "</div>",
             unsafe_allow_html=True,
         )
 
@@ -328,7 +333,20 @@ def render(settings: dict):
     )
     output.mkdir(parents=True, exist_ok=True)
     path = DailyPDFReport(settings).generate(enriched, output)
-    with open(path, "rb") as f:
-        st.download_button(
-            "Export Daily PDF", f, file_name=path.name
+    col_pdf, col_top = st.columns([1, 1])
+    with col_pdf:
+        with open(path, "rb") as f:
+            st.download_button(
+                "Export Daily PDF", f, file_name=path.name
+            )
+    with col_top:
+        st.markdown(
+            "<style>"
+            ".back-top a { color: #6d597a; text-decoration: none; }"
+            ".back-top a:hover { color: #9b85a6; }"
+            "</style>"
+            '<div class="back-top" style="text-align: right;">'
+            '<a href="#daily-portfolio-overview">↑ Back to top</a>'
+            "</div>",
+            unsafe_allow_html=True,
         )
