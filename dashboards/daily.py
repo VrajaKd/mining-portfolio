@@ -11,6 +11,20 @@ from dashboards.shared import (
     rename_for_display,
 )
 
+_BACK_TO_TOP = (
+    "<style>"
+    ".back-top a { color: #6d597a; text-decoration: none; }"
+    ".back-top a:hover { color: #9b85a6; }"
+    "</style>"
+    '<div class="back-top" style="text-align: right;">'
+    '<a href="#daily-portfolio-overview">↑ Back to top</a>'
+    "</div>"
+)
+
+
+def _render_back_to_top():
+    st.markdown(_BACK_TO_TOP, unsafe_allow_html=True)
+
 
 def _render_scoring_input(
     tickers: list[str],
@@ -138,8 +152,20 @@ def _render_scoring_input(
             f"×{ev_result['catalyst_multiplier']:.1f}",
         )
 
-    col_save, col_top = st.columns([1, 1])
-    with col_save:
+    has_extra = st.session_state.get("_has_extra_sections", False)
+    if has_extra:
+        col_save, col_top = st.columns([1, 1])
+        with col_save:
+            if st.button("Save Scores", type="primary"):
+                raw_scores["final_score"] = preview_score
+                save_scores(db_path, selected, raw_scores)
+                ev_result["tier"] = tier
+                save_ev_data(db_path, selected, ev_result)
+                alert_success(f"Saved scores for {selected}")
+                st.rerun()
+        with col_top:
+            _render_back_to_top()
+    else:
         if st.button("Save Scores", type="primary"):
             raw_scores["final_score"] = preview_score
             save_scores(db_path, selected, raw_scores)
@@ -147,17 +173,6 @@ def _render_scoring_input(
             save_ev_data(db_path, selected, ev_result)
             alert_success(f"Saved scores for {selected}")
             st.rerun()
-    with col_top:
-        st.markdown(
-            "<style>"
-            ".back-top a { color: #6d597a; text-decoration: none; }"
-            ".back-top a:hover { color: #9b85a6; }"
-            "</style>"
-            '<div class="back-top" style="text-align: right;">'
-            '<a href="#daily-portfolio-overview">↑ Back to top</a>'
-            "</div>",
-            unsafe_allow_html=True,
-        )
 
 
 def _render_decision_table(enriched: pd.DataFrame):
@@ -196,7 +211,7 @@ def _render_decision_table(enriched: pd.DataFrame):
         st.dataframe(view, use_container_width=True, hide_index=True)
 
 
-def _render_risk_flags(enriched: pd.DataFrame, settings: dict):
+def _render_risk_flags(enriched: pd.DataFrame, settings: dict) -> bool:
     threshold = (
         settings.get("model", {})
         .get("risk_thresholds", {})
@@ -204,7 +219,7 @@ def _render_risk_flags(enriched: pd.DataFrame, settings: dict):
     )
     high_risk = enriched[enriched["risk_score"] >= threshold]
     if high_risk.empty:
-        return
+        return False
 
     st.subheader("Risk Flags")
     for _, row in high_risk.iterrows():
@@ -212,17 +227,19 @@ def _render_risk_flags(enriched: pd.DataFrame, settings: dict):
             f"<b>{row['ticker']}</b> — Risk {row['risk_score']} "
             f"| Action: {row.get('action', 'N/A')}"
         )
+    return True
 
 
-def _render_swap_candidates(enriched: pd.DataFrame, settings: dict):
+def _render_swap_candidates(enriched: pd.DataFrame, settings: dict) -> bool:
     from modules.decision_engine import find_swap_candidates
 
     swaps = find_swap_candidates(enriched, settings)
     if swaps.empty:
-        return
+        return False
 
     st.subheader("Swap Candidates")
     st.dataframe(rename_for_display(swaps), use_container_width=True, hide_index=True)
+    return True
 
 
 def render(settings: dict):
@@ -319,10 +336,13 @@ def render(settings: dict):
         _render_scoring_input(tickers, settings, selected)
 
     # Risk flags
-    _render_risk_flags(enriched, settings)
+    has_risk = _render_risk_flags(enriched, settings)
 
     # Swap candidates
-    _render_swap_candidates(enriched, settings)
+    has_swaps = _render_swap_candidates(enriched, settings)
+
+    # Page has extra content below scoring — show back-to-top there
+    st.session_state["_has_extra_sections"] = has_risk or has_swaps
 
     # PDF export
     st.divider()
@@ -341,12 +361,6 @@ def render(settings: dict):
             )
     with col_top:
         st.markdown(
-            "<style>"
-            ".back-top a { color: #6d597a; text-decoration: none; }"
-            ".back-top a:hover { color: #9b85a6; }"
-            "</style>"
-            '<div class="back-top" style="text-align: right;">'
-            '<a href="#daily-portfolio-overview">↑ Back to top</a>'
-            "</div>",
+            _BACK_TO_TOP,
             unsafe_allow_html=True,
         )
