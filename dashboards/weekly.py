@@ -60,6 +60,11 @@ def render(settings: dict):
     scores_df = load_all_scores(db_path)
 
     if not scores_df.empty:
+        # Filter to current portfolio tickers only
+        portfolio_tickers = enriched["ticker"].tolist()
+        scores_df = scores_df[scores_df["ticker"].isin(portfolio_tickers)]
+
+    if not scores_df.empty:
         score_cols = ["ticker", *SCORE_CRITERIA, "final_score"]
         available = [c for c in score_cols if c in scores_df.columns]
         st.dataframe(
