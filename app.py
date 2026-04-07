@@ -24,6 +24,8 @@ def main():
     <style>
         section[data-testid="stSidebar"] {
             background-color: #355070;
+            width: 200px !important;
+            min-width: 200px !important;
         }
         /* Center content with max width */
         section[data-testid="stMain"] > div {
