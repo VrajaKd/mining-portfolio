@@ -1,0 +1,28 @@
+Statement,Header,Field Name,Field Value
+Statement,Data,BrokerName,Interactive Brokers Ireland Limited
+Statement,Data,Title,Activity Statement
+Statement,Data,Period,"April 7, 2026"
+Statement,Data,WhenGenerated,"2026-04-07, 16:00:00 EDT"
+Account Information,Header,Field Name,Field Value
+Account Information,Data,Name,Demo Account
+Account Information,Data,Account,U00000000
+Account Information,Data,Base Currency,USD
+Net Asset Value,Header,Asset Class,Prior Total,Current Long,Current Short,Current Total,Change
+Net Asset Value,Data,Cash ,0,45000.00,0,45000.00,0
+Net Asset Value,Data,Stock,0,44883.00,0,44883.00,0
+Net Asset Value,Data,Total,0,89883.00,0,89883.00,0
+Open Positions,Header,DataDiscriminator,Asset Category,Currency,Symbol,Quantity,Mult,Cost Price,Cost Basis,Close Price,Value,Unrealized P/L,Code
+Open Positions,Data,Summary,Stocks,USD,WPM,200,1,70.00,14000.00,68.10,13620.00,-380.00,
+Open Positions,Data,Summary,Stocks,USD,NEM,250,1,44.00,11000.00,45.70,11425.00,425.00,
+Open Positions,Data,Summary,Stocks,USD,HL,800,1,7.50,6000.00,7.24,5792.00,-208.00,
+Open Positions,Data,Summary,Stocks,USD,PAAS,300,1,19.50,5850.00,18.70,5610.00,-240.00,
+Open Positions,Data,Summary,Stocks,USD,AG,600,1,7.60,4560.00,7.34,4404.00,-156.00,
+Open Positions,Data,Summary,Stocks,USD,GOLD,200,1,19.50,3900.00,18.16,3632.00,-268.00,
+Open Positions,Total,,Stocks,USD,,,,,,44883.00,44483.00,-827.00,
+Financial Instrument Information,Header,Asset Category,Symbol,Description,Conid,Security ID,Underlying,Listing Exch,Multiplier,Type,Code
+Financial Instrument Information,Data,Stocks,WPM,Wheaton Precious Metals Corp,4456,US9628791099,WPM,NYSE,1,COMMON,
+Financial Instrument Information,Data,Stocks,NEM,Newmont Corporation,4978,US6516391066,NEM,NYSE,1,COMMON,
+Financial Instrument Information,Data,Stocks,HL,Hecla Mining Company,5678,US4227041062,HL,NYSE,1,COMMON,
+Financial Instrument Information,Data,Stocks,PAAS,Pan American Silver Corp,6789,US6980121090,PAAS,NASDAQ,1,COMMON,
+Financial Instrument Information,Data,Stocks,AG,First Majestic Silver Corp,7890,CA32076V1031,AG,NYSE,1,COMMON,
+Financial Instrument Information,Data,Stocks,GOLD,Barrick Gold Corporation,8901,CA0679011084,GOLD,NYSE,1,COMMON,

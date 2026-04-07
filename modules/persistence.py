@@ -185,6 +185,14 @@ def load_raw_portfolio(db_path: str | Path) -> pd.DataFrame:
         return pd.read_sql("SELECT * FROM raw_portfolio", conn)
 
 
+def clear_all_data(db_path: str | Path) -> None:
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("DELETE FROM scores")
+        conn.execute("DELETE FROM ev_data")
+        conn.execute("DELETE FROM portfolio_snapshots")
+        conn.execute("DROP TABLE IF EXISTS raw_portfolio")
+
+
 def save_portfolio_snapshot(
     db_path: str | Path,
     df: pd.DataFrame,

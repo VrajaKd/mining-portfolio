@@ -214,18 +214,112 @@ def _parse_simple_csv(filepath: str | Path) -> pd.DataFrame:
     return df
 
 
+def _parse_tws_export(filepath: str | Path) -> pd.DataFrame:
+    """Parse TWS File > Export Portfolio CSV."""
+    import io
+
+    if hasattr(filepath, "read"):
+        content = filepath.read()
+        if isinstance(content, bytes):
+            content = content.decode("utf-8-sig")
+        content = content.lstrip("\ufeff")
+    else:
+        content = Path(filepath).read_text(encoding="utf-8-sig")
+
+    # Split into sections by blank lines
+    lines = content.strip().split("\n")
+
+    # Find Portfolio section (header on line after "Portfolio")
+    portfolio_lines = []
+    cash_lines = []
+    section = None
+    for line in lines:
+        stripped = line.strip()
+        if stripped == "Portfolio":
+            section = "portfolio"
+            continue
+        elif stripped == "Cash Balances":
+            section = "cash"
+            continue
+        elif stripped == "":
+            section = None
+            continue
+
+        if section == "portfolio":
+            portfolio_lines.append(line)
+        elif section == "cash":
+            cash_lines.append(line)
+
+    if not portfolio_lines:
+        raise ValueError("No Portfolio section found in TWS export")
+
+    df = pd.read_csv(io.StringIO("\n".join(portfolio_lines)))
+
+    column_map = {
+        "Financial Instrument Description": "ticker",
+        "Position": "quantity",
+        "Currency": "currency",
+        "Market Price": "market_price",
+        "Market Value": "market_value",
+        "Average Price": "avg_cost",
+        "Unrealized P&L": "unrealized_pl",
+        "Realized P&L": "realized_pl",
+        "Security Type": "security_type",
+    }
+    rename = {k: v for k, v in column_map.items() if k in df.columns}
+    df = df.rename(columns=rename)
+
+    for col in ["quantity", "market_value", "avg_cost", "unrealized_pl"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    required = ["ticker", "currency", "quantity", "market_value"]
+    missing = [c for c in required if c not in df.columns]
+    if missing:
+        raise ValueError(f"Missing required columns: {missing}")
+
+    # Parse cash balances for account summary
+    account_summary = {}
+    if cash_lines:
+        # Last line with a value is the total
+        for line in reversed(cash_lines):
+            parts = line.split(",")
+            if len(parts) >= 2:
+                val = _to_float(parts[1])
+                if val:
+                    account_summary["cash"] = val
+                    break
+
+    stock_value = df["market_value"].sum()
+    account_summary["stock_value"] = stock_value
+    if account_summary.get("cash") is not None:
+        account_summary["net_liquidation"] = (
+            account_summary["cash"] + stock_value
+        )
+
+    result = df[
+        [c for c in [
+            "ticker", "currency", "quantity",
+            "market_value", "avg_cost", "unrealized_pl",
+        ] if c in df.columns]
+    ].reset_index(drop=True)
+    result.attrs["account_summary"] = account_summary
+    return result
+
+
 def parse_ib_csv(filepath: str | Path) -> pd.DataFrame:
-    """Parse IB CSV — auto-detects Activity Statement or simple format."""
+    """Parse IB CSV — auto-detects format."""
     import csv
     import io
 
     if hasattr(filepath, "read"):
         content = filepath.read()
         if isinstance(content, bytes):
-            content = content.decode("utf-8")
+            content = content.decode("utf-8-sig")
+        content = content.lstrip("\ufeff")
         filepath.seek(0)
     else:
-        content = Path(filepath).read_text()
+        content = Path(filepath).read_text(encoding="utf-8-sig")
 
     reader = csv.reader(io.StringIO(content))
     first_row = next(reader, [])
@@ -233,6 +327,8 @@ def parse_ib_csv(filepath: str | Path) -> pd.DataFrame:
 
     if first_cell == "Statement":
         return _parse_activity_statement(filepath)
+    if first_cell == "Portfolio":
+        return _parse_tws_export(filepath)
     return _parse_simple_csv(filepath)
 
 

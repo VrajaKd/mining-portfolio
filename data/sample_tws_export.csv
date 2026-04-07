@@ -1,0 +1,15 @@
+Portfolio
+Financial Instrument Description,Position,Currency,Market Price,Market Value,Average Price,Unrealized P&L,Realized P&L,Liquidate Last,Security Type,Delta Dollars
+WPM,200,USD,68.10,13620.00,70.00,-380.00,0.00,No,STK,13620.00
+NEM,250,USD,45.70,11425.00,44.00,425.00,0.00,No,STK,11425.00
+HL,800,USD,7.24,5792.00,7.50,-208.00,0.00,No,STK,5792.00
+PAAS,300,USD,18.70,5610.00,19.50,-240.00,0.00,No,STK,5610.00
+AG,600,USD,7.34,4404.00,7.60,-156.00,0.00,No,STK,4404.00
+GOLD,200,USD,18.16,3632.00,19.50,-268.00,0.00,No,STK,3632.00
+
+Cash Balances
+USD,0,CAD
+USD,45000,USD
+USD,45000,USD
+
+
