@@ -305,33 +305,31 @@ def render(settings: dict):
     account = df.attrs.get("account_summary", {})
     nlv = account.get("net_liquidation")
     cash = account.get("cash")
-    gross = sum(abs(v) for v in normalized["market_value"])
+    # Prefer base-currency stock_value from account summary over summing
+    # mixed-currency market_value columns
+    gross = account.get("stock_value") or sum(
+        abs(v) for v in normalized["market_value"]
+    )
     unrealized = (
         normalized["unrealized_pl"].sum()
         if "unrealized_pl" in normalized.columns
         else None
     )
 
-    cols = st.columns(4 if nlv else 3)
+    metrics = []
     if nlv:
-        with cols[0]:
-            st.metric("Net Liquidation", f"${nlv:,.2f}")
-        with cols[1]:
-            st.metric("Cash", f"${cash:,.2f}" if cash else "—")
-        with cols[2]:
-            st.metric("Gross Exposure", f"${gross:,.2f}")
-        with cols[3]:
-            st.metric("Positions", len(normalized))
-    else:
-        with cols[0]:
-            st.metric("Gross Exposure", f"${gross:,.2f}")
-        with cols[1]:
-            if unrealized is not None and pd.notna(unrealized):
-                st.metric("Unrealized P&L", f"${unrealized:,.2f}")
-            else:
-                st.metric("Positions", len(normalized))
-        with cols[2]:
-            st.metric("Positions", len(normalized))
+        metrics.append(("Net Liquidation", f"${nlv:,.2f}"))
+        if cash is not None:
+            metrics.append(("Cash", f"${cash:,.2f}"))
+    metrics.append(("Gross Exposure", f"${gross:,.2f}"))
+    if unrealized is not None and pd.notna(unrealized):
+        metrics.append(("Unrealized P&L", f"${unrealized:,.2f}"))
+    metrics.append(("Positions", str(len(normalized))))
+
+    cols = st.columns(len(metrics))
+    for col, (label, value) in zip(cols, metrics):
+        with col:
+            st.metric(label, value)
 
     # Enrich with scoring data
     enriched = load_and_enrich(normalized, settings)

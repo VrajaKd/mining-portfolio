@@ -171,18 +171,45 @@ def load_all_ev_data(db_path: str | Path) -> pd.DataFrame:
 def save_raw_portfolio(
     db_path: str | Path, df: pd.DataFrame
 ) -> None:
+    import json
+
     with sqlite3.connect(db_path) as conn:
         df.to_sql("raw_portfolio", conn, if_exists="replace", index=False)
+        # Persist account_summary (stored in df.attrs, not in columns)
+        summary = df.attrs.get("account_summary", {})
+        if summary:
+            conn.execute(
+                "CREATE TABLE IF NOT EXISTS account_summary "
+                "(key TEXT PRIMARY KEY, value TEXT)"
+            )
+            conn.execute("DELETE FROM account_summary")
+            conn.execute(
+                "INSERT INTO account_summary VALUES (?, ?)",
+                ("account_summary", json.dumps(summary)),
+            )
 
 
 def load_raw_portfolio(db_path: str | Path) -> pd.DataFrame:
+    import json
+
     with sqlite3.connect(db_path) as conn:
         tables = conn.execute(
             "SELECT name FROM sqlite_master WHERE name='raw_portfolio'"
         ).fetchone()
         if not tables:
             return pd.DataFrame()
-        return pd.read_sql("SELECT * FROM raw_portfolio", conn)
+        df = pd.read_sql("SELECT * FROM raw_portfolio", conn)
+        # Restore account_summary
+        has_summary = conn.execute(
+            "SELECT name FROM sqlite_master WHERE name='account_summary'"
+        ).fetchone()
+        if has_summary:
+            row = conn.execute(
+                "SELECT value FROM account_summary WHERE key='account_summary'"
+            ).fetchone()
+            if row:
+                df.attrs["account_summary"] = json.loads(row[0])
+        return df
 
 
 def clear_all_data(db_path: str | Path) -> None:

@@ -19,17 +19,28 @@ def _render_settings(settings: dict):
         "and cached portfolio. This cannot be undone."
     )
     if st.button("Clear all data", type="primary"):
-        from modules.persistence import clear_all_data
+        st.session_state["_confirm_clear"] = True
 
-        db_path = settings.get("paths", {}).get(
-            "database", "data/processed/scoring_data.db"
-        )
-        clear_all_data(db_path)
-        for key in list(st.session_state.keys()):
-            if key not in ("nav_page", "_data_cleared"):
-                del st.session_state[key]
-        st.session_state["_data_cleared"] = True
-        st.rerun()
+    if st.session_state.get("_confirm_clear"):
+        st.warning("Are you sure? This will delete all scores, EV inputs, and cached portfolio data.")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Yes, clear everything", type="primary"):
+                from modules.persistence import clear_all_data
+
+                db_path = settings.get("paths", {}).get(
+                    "database", "data/processed/scoring_data.db"
+                )
+                clear_all_data(db_path)
+                for key in list(st.session_state.keys()):
+                    if key not in ("nav_page", "_data_cleared"):
+                        del st.session_state[key]
+                st.session_state["_data_cleared"] = True
+                st.rerun()
+        with col2:
+            if st.button("Cancel"):
+                del st.session_state["_confirm_clear"]
+                st.rerun()
 
     if st.session_state.pop("_data_cleared", False):
         from dashboards.components import alert_success
