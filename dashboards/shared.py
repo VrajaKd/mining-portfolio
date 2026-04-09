@@ -88,6 +88,11 @@ def style_action_column(view: pd.DataFrame):
     return view
 
 
+def dataframe_height(df: pd.DataFrame, row_height: int = 35, header_height: int = 38) -> int:
+    """Calculate pixel height to show all rows without a scrollbar."""
+    return header_height + len(df) * row_height + 2
+
+
 def get_db_path(settings: dict) -> str:
     return settings.get("paths", {}).get(
         "database", "data/processed/scoring_data.db"

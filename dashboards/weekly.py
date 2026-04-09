@@ -5,6 +5,7 @@ import streamlit as st
 
 from dashboards.components import alert_error, alert_info, alert_success, alert_warning
 from dashboards.shared import (
+    dataframe_height,
     get_db_path,
     load_and_enrich,
     rename_for_display,
@@ -76,6 +77,7 @@ def render(settings: dict):
             rename_for_display(scores_df[available]),
             use_container_width=True,
             hide_index=True,
+            height=dataframe_height(scores_df),
         )
     else:
         alert_info("No scores entered yet. Score positions on the Daily page.")
@@ -84,6 +86,7 @@ def render(settings: dict):
     st.subheader("Allocation Gap")
     gap_cols = [
         "ticker",
+        "company_name",
         "score",
         "ev_adjusted",
         "tier",
@@ -104,6 +107,7 @@ def render(settings: dict):
         style_action_column(rename_for_display(gap_view)),
         use_container_width=True,
         hide_index=True,
+        height=dataframe_height(gap_view),
     )
 
     # Rebalance plan
@@ -130,6 +134,7 @@ def render(settings: dict):
                 rename_for_display(sells[available]),
                 use_container_width=True,
                 hide_index=True,
+                height=dataframe_height(sells),
             )
 
         if not adds.empty:
@@ -138,6 +143,7 @@ def render(settings: dict):
                 rename_for_display(adds[available]),
                 use_container_width=True,
                 hide_index=True,
+                height=dataframe_height(adds),
             )
 
         cash_freed = sells["delta_value"].sum() if not sells.empty else 0
@@ -162,12 +168,13 @@ def render(settings: dict):
     st.subheader("Best Ideas (Top 5 by EV)")
     if enriched["ev_adjusted"].notna().any():
         top5 = enriched.nlargest(5, "ev_adjusted")
-        best_cols = ["ticker", "score", "ev_adjusted", "tier", "action"]
+        best_cols = ["ticker", "company_name", "score", "ev_adjusted", "tier", "action"]
         available = [c for c in best_cols if c in top5.columns]
         st.dataframe(
             style_action_column(rename_for_display(top5[available])),
             use_container_width=True,
             hide_index=True,
+            height=dataframe_height(top5),
         )
 
     # PDF export

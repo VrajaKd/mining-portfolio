@@ -101,45 +101,68 @@ def _parse_activity_statement(filepath: str | Path) -> pd.DataFrame:
         dtype=str, keep_default_na=False,
     )
 
-    # Find Open Positions data rows
-    mask = (raw.iloc[:, 0] == "Open Positions") & (raw.iloc[:, 1] == "Data")
+    # Try Open Positions section first, fall back to MTM P&L section
+    section = "Open Positions"
+    mask = (raw.iloc[:, 0] == section) & (raw.iloc[:, 1] == "Data")
     positions = raw[mask].copy()
-    if positions.empty:
-        raise ValueError("No Open Positions found in Activity Statement")
+    is_mtm = False
 
-    # Filter Summary rows only (skip Total rows)
-    positions = positions[positions.iloc[:, 2] == "Summary"]
     if positions.empty:
-        raise ValueError("No Open Positions Summary rows found")
+        section = "Positions and Mark-to-Market Profit and Loss"
+        mask = (raw.iloc[:, 0] == section) & (raw.iloc[:, 1] == "Data")
+        positions = raw[mask].copy()
+        is_mtm = True
+
+    if positions.empty:
+        raise ValueError(
+            "No Open Positions or MTM Positions found in Activity Statement"
+        )
+
+    # Filter Summary rows for stocks only (skip Total/Details rows)
+    positions = positions[positions.iloc[:, 2] == "Summary"]
+    positions = positions[positions.iloc[:, 3] == "Stocks"]
+    if positions.empty:
+        raise ValueError("No stock position Summary rows found")
 
     # Header is at row where col[1] == "Header"
-    header_mask = (raw.iloc[:, 0] == "Open Positions") & (raw.iloc[:, 1] == "Header")
+    header_mask = (raw.iloc[:, 0] == section) & (raw.iloc[:, 1] == "Header")
     header_row = raw[header_mask].iloc[0].tolist()
 
     # Build DataFrame with proper column names
     positions.columns = header_row
-    positions = positions.rename(columns={
-        "Symbol": "ticker",
-        "Currency": "currency",
-        "Quantity": "quantity",
-        "Cost Price": "avg_cost",
-        "Value": "market_value",
-        "Unrealized P/L": "unrealized_pl",
-    })
+    if is_mtm:
+        positions = positions.rename(columns={
+            "Symbol": "ticker",
+            "Description": "company_name",
+            "Currency": "currency",
+            "Quantity": "quantity",
+            "Price": "avg_cost",
+            "Market Value": "market_value",
+        })
+    else:
+        positions = positions.rename(columns={
+            "Symbol": "ticker",
+            "Currency": "currency",
+            "Quantity": "quantity",
+            "Cost Price": "avg_cost",
+            "Value": "market_value",
+            "Unrealized P/L": "unrealized_pl",
+        })
 
-    # Get description from Financial Instrument Information section
-    fi_section = "Financial Instrument Information"
-    fi_mask = (raw.iloc[:, 0] == fi_section) & (raw.iloc[:, 1] == "Data")
-    fi_rows = raw[fi_mask]
-    if not fi_rows.empty:
-        fi_header_mask = (
-            (raw.iloc[:, 0] == fi_section) & (raw.iloc[:, 1] == "Header")
-        )
-        fi_header = raw[fi_header_mask].iloc[0].tolist()
-        fi_df = fi_rows.copy()
-        fi_df.columns = fi_header
-        desc_map = dict(zip(fi_df["Symbol"], fi_df["Description"]))
-        positions["company_name"] = positions["ticker"].map(desc_map)
+    # Get description from Financial Instrument Information section (Activity Statement)
+    if not is_mtm:
+        fi_section = "Financial Instrument Information"
+        fi_mask = (raw.iloc[:, 0] == fi_section) & (raw.iloc[:, 1] == "Data")
+        fi_rows = raw[fi_mask]
+        if not fi_rows.empty:
+            fi_header_mask = (
+                (raw.iloc[:, 0] == fi_section) & (raw.iloc[:, 1] == "Header")
+            )
+            fi_header = raw[fi_header_mask].iloc[0].tolist()
+            fi_df = fi_rows.copy()
+            fi_df.columns = fi_header
+            desc_map = dict(zip(fi_df["Symbol"], fi_df["Description"]))
+            positions["company_name"] = positions["ticker"].map(desc_map)
 
     # Convert numeric columns
     for col in ["quantity", "avg_cost", "market_value", "unrealized_pl"]:

@@ -4,6 +4,7 @@ import streamlit as st
 
 from dashboards.components import alert_info
 from dashboards.shared import (
+    dataframe_height,
     get_db_path,
     load_and_enrich,
     rename_for_display,
@@ -82,7 +83,7 @@ def render(settings: dict):
         comm["status"] = comm["weight"].apply(
             lambda w: "OVERWEIGHT" if w > max_commodity else "OK"
         )
-        st.dataframe(comm, use_container_width=True)
+        st.dataframe(comm, use_container_width=True, height=dataframe_height(comm))
     else:
         alert_info(
             "Commodity data not available. "
@@ -106,7 +107,7 @@ def render(settings: dict):
         region["status"] = region["weight"].apply(
             lambda w: "OVERWEIGHT" if w > max_region else "OK"
         )
-        st.dataframe(region, use_container_width=True)
+        st.dataframe(region, use_container_width=True, height=dataframe_height(region))
     else:
         alert_info(
             "Region data not available. "
@@ -122,7 +123,7 @@ def render(settings: dict):
             avg_score=("score", "mean"),
             avg_ev=("ev_adjusted", "mean"),
         ).round(2)
-        st.dataframe(tiers, use_container_width=True)
+        st.dataframe(tiers, use_container_width=True, height=dataframe_height(tiers))
     else:
         alert_info("Score positions on the Daily page to see tier breakdown.")
 
@@ -130,6 +131,7 @@ def render(settings: dict):
     st.subheader("Full Portfolio")
     display_cols = [
         "ticker",
+        "company_name",
         "quantity",
         "market_value",
         "portfolio_weight_pct",
@@ -149,6 +151,7 @@ def render(settings: dict):
         style_action_column(view),
         use_container_width=True,
         hide_index=True,
+        height=dataframe_height(view),
     )
 
     # PDF export

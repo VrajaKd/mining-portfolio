@@ -200,8 +200,9 @@ class DailyPDFReport(PortfolioPDFReport):
             Paragraph("Decision Dashboard", self.styles["SectionHeader"])
         )
         cols = [
-            "ticker", "score", "ev_adjusted", "risk_score",
-            "action", "portfolio_weight_pct", "target_weight_pct",
+            "ticker", "company_name", "score", "ev_adjusted",
+            "risk_score", "action", "portfolio_weight_pct",
+            "target_weight_pct",
         ]
         data = self._df_to_table_data(df, cols)
         elements.append(self._build_table(data))
@@ -258,8 +259,9 @@ class WeeklyPDFReport(PortfolioPDFReport):
             Paragraph("Portfolio Scoring", self.styles["SectionHeader"])
         )
         cols = [
-            "ticker", "score", "ev_adjusted", "risk_score",
-            "tier", "action", "portfolio_weight_pct", "target_weight_pct",
+            "ticker", "company_name", "score", "ev_adjusted",
+            "risk_score", "tier", "action",
+            "portfolio_weight_pct", "target_weight_pct",
         ]
         data = self._df_to_table_data(df, cols)
         elements.append(self._build_table(data))
@@ -289,7 +291,10 @@ class WeeklyPDFReport(PortfolioPDFReport):
                 Paragraph("Best Ideas (Top 5)", self.styles["SectionHeader"])
             )
             top5 = df.nlargest(5, "ev_adjusted")
-            best_cols = ["ticker", "score", "ev_adjusted", "tier", "action"]
+            best_cols = [
+                "ticker", "company_name", "score",
+                "ev_adjusted", "tier", "action",
+            ]
             data = self._df_to_table_data(top5, best_cols)
             elements.append(self._build_table(data))
 
@@ -354,8 +359,9 @@ class MonthlyPDFReport(PortfolioPDFReport):
             Paragraph("Full Portfolio", self.styles["SectionHeader"])
         )
         cols = [
-            "ticker", "market_value", "portfolio_weight_pct",
-            "score", "ev_adjusted", "risk_score", "action",
+            "ticker", "company_name", "market_value",
+            "portfolio_weight_pct", "score", "ev_adjusted",
+            "risk_score", "action",
         ]
         data = self._df_to_table_data(df, cols)
         elements.append(self._build_table(data))

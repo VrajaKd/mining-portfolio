@@ -1,6 +1,7 @@
 import pandas as pd
+import pytest
 
-from modules.ingestion import normalize_holdings, validate_holdings
+from modules.ingestion import normalize_holdings, validate_holdings, parse_ib_csv
 
 
 def _sample_df(**overrides):
@@ -78,3 +79,51 @@ def test_validate_price_divergence():
     df = normalize_holdings(df)
     _, warnings = validate_holdings(df)
     assert any("divergence" in w.lower() for w in warnings)
+
+
+# --- CSV parsing tests ---
+
+
+def test_parse_activity_statement():
+    df = parse_ib_csv("data/sample_activity_statement.csv")
+    assert not df.empty
+    assert "ticker" in df.columns
+    assert "market_value" in df.columns
+    assert df.attrs.get("account_summary")
+
+
+def test_parse_tws_export():
+    df = parse_ib_csv("data/sample_tws_export.csv")
+    assert not df.empty
+    assert "ticker" in df.columns
+
+
+def test_parse_mtm_summary():
+    df = parse_ib_csv("data/U8325074_20260408 9-4-2026.csv")
+    assert len(df) == 16
+    assert "ticker" in df.columns
+    assert "company_name" in df.columns
+    assert "market_value" in df.columns
+    assert "quantity" in df.columns
+    # Check known positions
+    tickers = set(df["ticker"])
+    assert "SGQ" in tickers
+    assert "BIG" in tickers
+    # Account summary should be populated
+    summary = df.attrs.get("account_summary", {})
+    assert summary.get("net_liquidation") > 0
+    assert summary.get("cash") is not None
+
+
+def test_parse_mtm_filters_stocks_only():
+    df = parse_ib_csv("data/U8325074_20260408 9-4-2026.csv")
+    # Should only contain stock positions, not forex
+    currencies = set(df["currency"])
+    assert currencies <= {"AUD", "CAD"}
+
+
+def test_parse_invalid_csv(tmp_path):
+    bad = tmp_path / "bad.csv"
+    bad.write_text("Statement,Data,foo,bar\n")
+    with pytest.raises(ValueError):
+        parse_ib_csv(str(bad))

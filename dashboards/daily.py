@@ -6,6 +6,7 @@ import streamlit as st
 
 from dashboards.components import alert_error, alert_info, alert_success, alert_warning
 from dashboards.shared import (
+    dataframe_height,
     get_db_path,
     load_and_enrich,
     rename_for_display,
@@ -181,6 +182,7 @@ def _render_decision_table(enriched: pd.DataFrame):
 
     display_cols = [
         "ticker",
+        "company_name",
         "score",
         "ev_adjusted",
         "risk_score",
@@ -196,6 +198,7 @@ def _render_decision_table(enriched: pd.DataFrame):
         style_action_column(view),
         use_container_width=True,
         hide_index=True,
+        height=dataframe_height(view),
     )
 
 
@@ -226,7 +229,7 @@ def _render_swap_candidates(enriched: pd.DataFrame, settings: dict) -> bool:
         return False
 
     st.subheader("Swap Candidates")
-    st.dataframe(rename_for_display(swaps), use_container_width=True, hide_index=True)
+    st.dataframe(rename_for_display(swaps), use_container_width=True, hide_index=True, height=dataframe_height(swaps))
     return True
 
 
